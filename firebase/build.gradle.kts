@@ -10,16 +10,15 @@ plugins {
 }
 
 android {
-    namespace = "org.grovealliance.account.firebase"
+    namespace = "org.grovealliance.firebase"
 }
 
 dependencies {
-    api(project(":account"))
-    api(project(":firebase"))
-    api(libs.firebase.auth.ktx)
-    api(libs.firebase.firestore.ktx)
+    api(project(":core"))
+    api(libs.firebase.common)
 
     implementation(project(":core-coroutines"))
-    implementation(project(":resources"))
-    implementation(libs.googleid)
+    implementation(project(":core-logging"))
+
+    testImplementation(project(":testing-core"))
 }
