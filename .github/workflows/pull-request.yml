@@ -10,12 +10,6 @@ name: Pull Request Checks
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-      - converted_to_draft
   workflow_dispatch:
 
 concurrency:
@@ -23,9 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  scoped_health_fhir:
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
-    name: Scoped Health/FHIR Development
+  health_fhir_lint:
+    name: Health/FHIR Lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,13 +33,9 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - name: Test Health Collection and FHIR Conversion
-        run: >-
-          ./gradlew
-          :health:testDebugUnitTest
-          :health-fhir:testDebugUnitTest
-          :health-fhir:lintDebug
-          --console=plain
+      # The shared Android workflow has no lint job, so this is the only thing linting the module.
+      - name: Lint the FHIR Conversion
+        run: ./gradlew :health-fhir:lintDebug --console=plain
 
   fhir_conformance:
     name: FHIR R4 Conformance
@@ -104,7 +93,6 @@ jobs:
           --validator-jar .grove-fhir/.build/fhir-tools/validator_cli.jar
 
   android:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Android
     uses: SchmiedmayerLab/.github/.github/workflows/android.yml@v0.5
     permissions:
