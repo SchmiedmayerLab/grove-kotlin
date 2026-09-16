@@ -101,7 +101,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         File(wireExportDirectory, "health-connect-heart-rate-upsert-bundle.json")
             .writeText(sink.batches.last().bundleJson)
         assertThat(sink.batches.last().payloadSha256)
-            .isEqualTo("bb034e7909dcd78f3a7e0d7077a823bec4f24fa85ef76797ddb9b563243de4ec")
+            .isEqualTo("1bf76fb6c0c0636610ccb704d25d075d809ca3a5265d9e38e70192426c989d82")
         coordinator.upsert(
             heartRateRecord(
                 samples = twoHeartRateSamples().take(1),
@@ -114,7 +114,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         File(wireExportDirectory, "health-connect-heart-rate-update-bundle.json")
             .writeText(sink.batches.last().bundleJson)
         assertThat(sink.batches.last().payloadSha256)
-            .isEqualTo("c06527d5531d0c42f4630ad1e1a712aad02102cf594d1fc45b2da5106b2311fa")
+            .isEqualTo("b4bfe4a306c67dd48c5405aa4fa6d22ab88546c173e37374b9c81404763378b5")
 
         coordinator.upsert(
             heartRateRecord(
@@ -133,7 +133,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         assertThat(zeroOutputRetraction.bundle.entry.map { it.resource.fhirType() })
             .containsExactly("Provenance")
         assertThat(zeroOutputRetraction.payloadSha256)
-            .isEqualTo("129afc137d1ce3c54fe50027707d46bacc57e4e3f5e8275d6a6e96469f4405f2")
+            .isEqualTo("3c290aad1217fc239f9cf7f169f7222a2e68c98c425b23dedcb6ff8f8e2c1631")
 
         coordinator.upsert(stepRecord("fixture-deletion"), conversionTime)
         coordinator.delete("StepsRecord", "fixture-deletion", conversionTime.plusSeconds(2))
@@ -142,7 +142,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         File(wireExportDirectory, "health-connect-step-deletion-bundle.json")
             .writeText(sink.batches.last().bundleJson)
         assertThat(sink.batches.last().payloadSha256)
-            .isEqualTo("e4632db5eef66b0810bc8fd641c70865eb9a26d1500cd62086e8d515929a297e")
+            .isEqualTo("47af491376afb550450f1a3b6ec57888e1cea5f15c88ab455716579ac3465ba9")
 
         assertThat(
             exportDirectory.listFiles()?.map { it.name }
