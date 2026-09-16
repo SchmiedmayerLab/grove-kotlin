@@ -134,7 +134,13 @@ fun Project.setupJacoco() {
     )
     val reportTask = tasks.register("jacocoCoverageReport", JacocoReport::class.java) {
         classDirectories.setFrom(
-            fileTree("$buildDir/intermediates/classes/debug") {
+            // The Android plugin's built-in Kotlin support writes classes under built_in_kotlinc;
+            // the other two are where it wrote them before, and where Java classes still land.
+            fileTree("$buildDir/intermediates/built_in_kotlinc/debug") {
+                exclude(coverageExclusions)
+            } + fileTree("$buildDir/intermediates/javac/debug") {
+                exclude(coverageExclusions)
+            } + fileTree("$buildDir/intermediates/classes/debug") {
                 exclude(coverageExclusions)
             } + fileTree("$buildDir/tmp/kotlin-classes/debug") {
                 exclude(coverageExclusions)
