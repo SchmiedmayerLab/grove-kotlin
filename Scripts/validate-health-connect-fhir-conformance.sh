@@ -283,7 +283,7 @@ manifest = {
     "schemaVersion": 0,
     "fhirVersion": "4.0.1",
     "producer": {
-        "name": "My Heart Counts Android Health Connect",
+        "name": "Grove Android Health Connect",
         "version": release_version,
         "revision": revision,
     },

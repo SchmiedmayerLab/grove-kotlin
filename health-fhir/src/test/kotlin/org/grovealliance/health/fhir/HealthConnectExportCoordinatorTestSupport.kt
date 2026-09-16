@@ -811,8 +811,8 @@ abstract class HealthConnectExportCoordinatorTestSupport {
                 ),
             ),
             assembler = application(
-                "My Heart Counts Android FHIR Converter",
-                "edu.stanford.myheartcounts.fhir",
+                "Grove Android FHIR Converter",
+                "org.grovealliance.health.fhir",
                 "1.0.0",
             ),
             researchStudies = listOf(

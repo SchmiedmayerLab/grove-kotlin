@@ -43,7 +43,7 @@ abstract class HealthConnectR4ConverterTestSupport {
     protected val subjectIdentifier = identifier(TEST_CONTEXT_IDENTIFIER_SYSTEM, "participant-001")
     protected val assemblerIdentifier = identifier(
         HealthConnectContract.ANDROID_PACKAGE_IDENTIFIER,
-        "edu.stanford.myheartcounts.fhir",
+        "org.grovealliance.health.fhir",
     )
     protected val researchStudyIdentifier = identifier(TEST_CONTEXT_IDENTIFIER_SYSTEM, "my-heart-counts")
     protected val conversionEventIdentifier = HealthConnectIdentity.exchange(
@@ -74,8 +74,8 @@ abstract class HealthConnectR4ConverterTestSupport {
             ),
         ),
         assembler = application(
-            name = "My Heart Counts Android FHIR Converter",
-            identifierValue = "edu.stanford.myheartcounts.fhir",
+            name = "Grove Android FHIR Converter",
+            identifierValue = "org.grovealliance.health.fhir",
             version = "1.0.0",
         ),
         researchStudies = listOf(

@@ -88,7 +88,7 @@ class HealthConnectExportCoordinatorRetractionTest : HealthConnectExportCoordina
                     testIdentityKey(),
                     HealthConnectIdentity.exchange(TEST_EVENT_SYSTEM, TEST_PRODUCER_INSTANCE, EventSequence("2")),
                     "application",
-                    "edu.stanford.myheartcounts.fhir",
+                    "org.grovealliance.health.fhir",
                 ).value,
             )
         assertThat(
