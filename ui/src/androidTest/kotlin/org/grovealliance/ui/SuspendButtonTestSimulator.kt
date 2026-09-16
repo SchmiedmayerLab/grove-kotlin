@@ -26,7 +26,9 @@ class SuspendButtonTestSimulator(
     }
 
     fun waitForHelloWorldButtonAction() {
-        composeTestRule.waitUntil {
+        // The action delays 500 ms, which leaves no headroom under the one second default on the
+        // slower emulator images.
+        composeTestRule.waitUntil(timeoutMillis = ACTION_TIMEOUT_MILLIS) {
             composeTestRule.onAllNodesWithText("Action executed")
                 .fetchSemanticsNodes().size == 1
         }
@@ -73,5 +75,9 @@ class SuspendButtonTestSimulator(
             .onNodeWithText("Hello Throwing World")
             .assertHasClickAction()
             .assertIsEnabled()
+    }
+
+    private companion object {
+        const val ACTION_TIMEOUT_MILLIS = 5_000L
     }
 }
