@@ -45,7 +45,7 @@ abstract class HealthConnectR4ConverterTestSupport {
         HealthConnectContract.ANDROID_PACKAGE_IDENTIFIER,
         "org.grovealliance.health.fhir",
     )
-    protected val researchStudyIdentifier = identifier(TEST_CONTEXT_IDENTIFIER_SYSTEM, "my-heart-counts")
+    protected val researchStudyIdentifier = identifier(TEST_CONTEXT_IDENTIFIER_SYSTEM, "example-study")
     protected val conversionEventIdentifier = HealthConnectIdentity.exchange(
         TEST_EVENT_SYSTEM,
         TEST_PRODUCER_INSTANCE,

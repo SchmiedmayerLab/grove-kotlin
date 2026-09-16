@@ -799,7 +799,7 @@ abstract class HealthConnectExportCoordinatorTestSupport {
         recordingIdentifierValue: (Device) -> String = { "study-watch" },
     ): HealthConnectConversionContext {
         val subjectIdentifier = contextIdentifier("participant-001")
-        val researchStudyIdentifier = contextIdentifier("my-heart-counts")
+        val researchStudyIdentifier = contextIdentifier("example-study")
         return HealthConnectConversionContext(
             eventIdentifierSystem = TEST_EVENT_SYSTEM,
             entryNodeIdentifierSystem = TEST_ENTRY_NODE_SYSTEM,

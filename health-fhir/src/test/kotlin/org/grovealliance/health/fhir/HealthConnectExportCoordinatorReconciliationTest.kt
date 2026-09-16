@@ -101,7 +101,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         File(wireExportDirectory, "health-connect-heart-rate-upsert-bundle.json")
             .writeText(sink.batches.last().bundleJson)
         assertThat(sink.batches.last().payloadSha256)
-            .isEqualTo("1bf76fb6c0c0636610ccb704d25d075d809ca3a5265d9e38e70192426c989d82")
+            .isEqualTo("740dcef83b0546614e4500236a133f017c44981570db77ffc0d93c766662dcdc")
         coordinator.upsert(
             heartRateRecord(
                 samples = twoHeartRateSamples().take(1),
@@ -114,7 +114,7 @@ class HealthConnectExportCoordinatorReconciliationTest : HealthConnectExportCoor
         File(wireExportDirectory, "health-connect-heart-rate-update-bundle.json")
             .writeText(sink.batches.last().bundleJson)
         assertThat(sink.batches.last().payloadSha256)
-            .isEqualTo("b4bfe4a306c67dd48c5405aa4fa6d22ab88546c173e37374b9c81404763378b5")
+            .isEqualTo("1e2e070530964151430179bdb89cc7f070c3879b973024b0c96f1ee0f9de4d65")
 
         coordinator.upsert(
             heartRateRecord(
