@@ -1,5 +1,5 @@
 #
-# This source file is part of the My Heart Counts Android open-source project
+# This source file is part of the Grove open-source project
 #
 # SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 #
@@ -35,14 +35,6 @@ updates:
     multi-ecosystem-group: "weekly-dependencies"
 
   - package-ecosystem: github-actions
-    directory: /
-    patterns:
-      - "*"
-    multi-ecosystem-group: "weekly-dependencies"
-
-  # Moves the study definitions submodule to the head of the branch it tracks, so the study
-  # bundle the app exports advances through a reviewable commit rather than a manual sync.
-  - package-ecosystem: gitsubmodule
     directory: /
     patterns:
       - "*"

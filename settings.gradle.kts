@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -30,7 +30,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MyHeartCounts-Android"
+rootProject.name = "grove-kotlin"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
@@ -48,7 +48,6 @@ include(":core-viewmodel")
 include(":foundation")
 include(":health")
 include(":markdown")
-include(":myheartcounts")
 include(":onboarding")
 include(":questionnaire")
 include(":resources")

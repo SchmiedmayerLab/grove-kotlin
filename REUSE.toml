@@ -1,5 +1,5 @@
 #
-# This source file is part of the My Heart Counts Android open-source project
+# This source file is part of the Grove open-source project
 #
 # SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 #
@@ -18,14 +18,6 @@ path = [
 precedence = "aggregate"
 SPDX-License-Identifier = "Apache-2.0"
 
-# .gitmodules carries no comment syntax git tooling universally preserves.
-[[annotations]]
-path = [
-    ".gitmodules",
-]
-SPDX-FileCopyrightText = "2026 Stanford University and the project authors (see CONTRIBUTORS.md)"
-SPDX-License-Identifier = "MIT"
-
 # Screenshot baselines are generated per test, so they are covered by pattern rather than by a
 # sidecar each.
 [[annotations]]
@@ -38,7 +30,6 @@ SPDX-License-Identifier = "MIT"
 # Android's resource merger rejects adjacent .license sidecars in res/.
 [[annotations]]
 path = [
-    "myheartcounts/src/main/res/mipmap-*/*.png",
     "sample-app/src/main/res/mipmap-*/*.webp",
     "ui-theme/src/main/res/font/*.ttf",
 ]

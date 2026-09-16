@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -66,7 +66,7 @@ class ConsentCustomElementsScreenshotTest : ScreenshotTest() {
         ConsentSelectSection(
             id = "short-term-physical-activity-trial",
             text = "Would you like to join the short term physical activity promoting trial?",
-            footnote = "If you select **yes**, you will go straight from the baseline monitoring week into the randomized crossover trial.\nIf you select **no**, you will still be able to use the base My Heart Counts application.",
+            footnote = "If you select **yes**, you will go straight from the baseline monitoring week into the randomized crossover trial.\nIf you select **no**, you will still be able to use the base study application.",
             options = listOf(
                 SelectionOption("short-term-physical-activity-trial-yes", "Yes"),
                 SelectionOption("short-term-physical-activity-trial-no", "No"),

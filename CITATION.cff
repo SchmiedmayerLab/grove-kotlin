@@ -1,5 +1,5 @@
 #
-# This source file is part of the My Heart Counts Android open-source project
+# This source file is part of the Grove open-source project
 #
 # SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 #
@@ -15,7 +15,7 @@ authors:
 - family-names: "Schmiedmayer"
   given-names: "Paul"
   orcid: "https://orcid.org/0000-0002-8607-9148"
-title: "My Heart Counts Android"
+title: "Grove Kotlin"
 license: MIT
-url: "https://github.com/SchmiedmayerLab/MyHeartCounts-Android"
-repository-code: "https://github.com/SchmiedmayerLab/MyHeartCounts-Android"
+url: "https://github.com/SchmiedmayerLab/grove-kotlin"
+repository-code: "https://github.com/SchmiedmayerLab/grove-kotlin"

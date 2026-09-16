@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -24,6 +24,11 @@ class GroveBaseConfigConventionPlugin : Plugin<Project> {
     private val java = JavaVersion.VERSION_21
 
     override fun apply(target: Project) = with(target) {
+        // What a consuming composite build substitutes its `org.grovealliance:<module>`
+        // dependencies against, and what a published artifact would carry.
+        group = providers.gradleProperty("grove.group").get()
+        version = providers.gradleProperty("grove.version").get()
+
         android {
             compileSdk = findVersion("compileSdk").toInt()
 
