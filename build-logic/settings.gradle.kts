@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -18,5 +18,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "build-logic"
+// Named for the build that owns it, so a consuming composite build can include its own build-logic.
+rootProject.name = "grove-build-logic"
 include(":convention")

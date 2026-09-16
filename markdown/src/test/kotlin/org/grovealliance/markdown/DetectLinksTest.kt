@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -15,13 +15,13 @@ class DetectLinksTest {
     @Test
     fun `it should detect an http web url`() {
         // given
-        val text = "See https://myheartcounts.stanford.edu for details."
+        val text = "See https://grovealliance.org for details."
 
         // when
         val links = detectLinks(text)
 
         // then
-        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Web("https://myheartcounts.stanford.edu"))
+        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Web("https://grovealliance.org"))
     }
 
     @Test
@@ -52,13 +52,13 @@ class DetectLinksTest {
     @Test
     fun `it should detect an email address`() {
         // given
-        val text = "Contact myheartcounts@stanford.edu please"
+        val text = "Contact contact@grovealliance.org please"
 
         // when
         val links = detectLinks(text)
 
         // then
-        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Email("myheartcounts@stanford.edu"))
+        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Email("contact@grovealliance.org"))
     }
 
     @Test
@@ -100,13 +100,13 @@ class DetectLinksTest {
     @Test
     fun `it should report the source range of a link`() {
         // given
-        val text = "x myheartcounts@stanford.edu"
+        val text = "x contact@grovealliance.org"
 
         // when
         val link = detectLinks(text).single()
 
         // then
-        assertThat(text.substring(link.range)).isEqualTo("myheartcounts@stanford.edu")
+        assertThat(text.substring(link.range)).isEqualTo("contact@grovealliance.org")
     }
 
     @Test
@@ -184,12 +184,12 @@ class DetectLinksTest {
     @Test
     fun `it should detect links within a markdown block`() {
         // given
-        val block = MarkdownBlock.Markdown(id = null, rawContents = "Email myheartcounts@stanford.edu")
+        val block = MarkdownBlock.Markdown(id = null, rawContents = "Email contact@grovealliance.org")
 
         // when
         val links = block.links()
 
         // then
-        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Email("myheartcounts@stanford.edu"))
+        assertThat(links.map { it.link }).containsExactly(MarkdownLink.Email("contact@grovealliance.org"))
     }
 }

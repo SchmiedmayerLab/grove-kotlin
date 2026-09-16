@@ -1,5 +1,5 @@
 #
-# This source file is part of the My Heart Counts Android open-source project
+# This source file is part of the Grove open-source project
 #
 # SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 #
@@ -64,7 +64,6 @@ build/
 
 # track build-logic module
 !**/org/grovealliance/build
-!**/edu/stanford/myheartcounts/build
 
 # built application files
 *.apk
@@ -74,15 +73,3 @@ build/
 
 # Other files
 .DS_Store
-
-# fastlane
-play-store-credentials.json
-keystore.jks
-app/release/*
-app/debug/*
-gha-creds-*.json
-
-# services and secrets
-modules/account/src/main/res/values/secrets.xml
-deployment/secrets/*
-!deployment/secrets/README.md

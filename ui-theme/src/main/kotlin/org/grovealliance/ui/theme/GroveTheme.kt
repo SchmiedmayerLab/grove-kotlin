@@ -1,5 +1,5 @@
 //
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //
@@ -8,6 +8,7 @@
 package org.grovealliance.ui.theme
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +57,8 @@ fun GroveTheme(
     val context = LocalContext.current
     val palette = remember(context, darkTheme) {
         when {
-            dynamicColor -> {
+            // Material You dynamic color is only available from Android 12 (API 31) onwards.
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
                 ColorPalette(
                     dark = dynamicDarkColorScheme(context),
                     light = dynamicLightColorScheme(context)

@@ -6,7 +6,7 @@ hand-written, so it could fall behind without anything failing. Generating it cl
 place where a catalog change reaches two languages and silently misses the third.
 """
 
-# This source file is part of the My Heart Counts Android open-source project
+# This source file is part of the Grove open-source project
 #
 # SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 #
@@ -23,7 +23,7 @@ from typing import Any
 
 
 HEADER = """//
-// This source file is part of the My Heart Counts Android open-source project
+// This source file is part of the Grove open-source project
 //
 // SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 //

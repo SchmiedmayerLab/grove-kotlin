@@ -2,7 +2,7 @@
 
 <!--
 
-This source file is part of the My Heart Counts Android open-source project
+This source file is part of the Grove open-source project
 
 SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
 
@@ -121,6 +121,5 @@ SPDX-License-Identifier: MIT
 
     <!-- onboarding -->
     <string name="onboarding_next">Next</string>
-    <string name="onboarding_waitlist_success">We\'ve saved your email and will notify you when My Heart Counts becomes available in your region.</string>
     <string name="task_completed">Completed</string>
 </resources>
