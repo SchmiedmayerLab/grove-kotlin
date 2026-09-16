@@ -144,7 +144,7 @@ Grove Kotlin builds on JDK 21.
 ./gradlew installGitHooks        # runs detekt before each commit
 ```
 
-The [Detekt guide](internal/guides/Detekt.md) and the [Paparazzi guide](internal/guides/Paparazzi%20screenshot%20testing.md) cover the Android Studio setup for each.
+The [Detekt guide](internal/guides/Detekt.md) and the [Paparazzi guide](internal/guides/Paparazzi-Screenshot-Testing.md) cover the Android Studio setup for each.
 
 ## Contributing
 
