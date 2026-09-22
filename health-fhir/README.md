@@ -10,325 +10,230 @@ SPDX-License-Identifier: MIT
 
 -->
 
-`health-fhir` is the AndroidX Health Connect 1.1.0 producer for the R4 Mobile and
-Health Connect packages in the Grove FHIR Implementation Guides. One conversion event represents
-exactly one immutable source-record revision and produces a FHIR collection
-`Bundle`. A source removal is a separate Provenance-only retraction event; it is
-an assertion for a configured sink, not a FHIR delete command.
+`health-fhir` turns AndroidX Health Connect records into Grove Mobile exchange graphs.
+If you already know the pieces, jump to [Beyond the minimum](#beyond-the-minimum).
 
-The module converts and coordinates export and includes a production Room
-journal. It does not read Health Connect, select a repository schema, upload
-data, manage cryptographic keys, or advance a Health Connect changes token. The
-application opens the journal and supplies an idempotent sink. The coordinator
-commits local state only after that sink acknowledges the exact serialized
-event.
+## Why this exists
 
-This library is therefore not a standalone production exporter. Its
-`RoomHealthConnectExportJournal` supplies exact-payload persistence, global
-monotonic event sequences, revision compare-and-set, and renewable fenced source
-and reconciliation leases across database instances without holding a database
-transaction across sink I/O. It uses an exported versioned Room schema and never
-falls back to destructive migration. The application still owns database
-backup/retention policy, the managed HMAC key, Health Connect changes-token
-coordination, credentials, and destination acknowledgement semantics.
+A Health Connect record is a row in a store that only the phone it lives on can read.
+This module turns one such record into one immutable, self-describing FHIR Bundle, the exchange graph, that any receiver can deduplicate, correct and retract without knowing anything about Health Connect.
+Plain FHIR does not say whether two uploads are the same record, who assembled them, or which study they were collected for; Grove adds stable identities that never leak the native record id, provenance naming the application and the device that assembled the graph, and optional study context.
+A receiver gets a graph it can store, compare byte for byte on a retry, supersede by version and retract by identity.
 
-## Required configuration
+## What you need and why
 
-A deployment must persist all of the following independently of an app process:
+Five inputs have no default because each one is a decision only your deployment can make.
+They are assembled in this order.
 
-- one repository-scope `FhirIdentifierKey` for exactly one Health Connect
-  repository;
-- one lowercase producer-instance UUID;
-- one managed HMAC-SHA-256 key, key id, positive epoch, and deployment-owned
-  identity-system family;
-- distinct deployment-owned event and entry-node Identifier systems; and
-- the export journal and pending payload bytes.
+### The subject pseudonym
 
-Open one durable journal database and retain it for at least as long as an
-emitted graph can be replayed or retracted:
+A `Subject.Logical` is the pseudonymous identifier your deployment assigned to the participant: a system URI you own and a value that is neither a name, an account nor a device id.
+Every output names its subject, so a receiver can group records per participant without learning who they are.
+It comes from your enrollment or account service.
+Persist it with the account: a participant who reinstalls the app must keep the same pseudonym, or the receiver sees two people.
 
-```kotlin
-val journal = RoomHealthConnectExportJournal.open(
-    context = applicationContext,
-    databaseName = "study-health-connect-fhir-journal.db",
-)
+### The identity scope
 
-val coordinator = HealthConnectExportCoordinator(
-    converter = converter,
-    journal = journal,
-    sink = idempotentDestinationSink,
-)
-```
+An `OpaqueIdentityScope` mints every Grove identity: the source record, each output, the writer's record and each device snapshot.
+It holds an HMAC-SHA-256 key, the key id, the key epoch and the twelve identifier systems derived from your deployment root.
+Why HMAC: the same record exported twice yields the same identifier, so a receiver deduplicates, yet nobody can recover the native record id from it.
+The key comes from your key management, for example an Android Keystore HMAC key; the systems come from `DeploymentIdentifierSystems.derived` over your deployment root.
+Persist the key id and the epoch next to the key.
+Rotating either one opens a new identity space, and the old one must stay available for as long as its graphs can be replayed or retracted.
 
-`HealthConnectSynchronizationConstraint` is the supported bridge from the
-`:health` collector to that coordinator: it implements `HealthConstraint`, so
-upserts, exclusions, deletions, and full resyncs reach the journal before the
-changes token advances. Give it a `HealthConnectFullReader` that performs one
-complete per-type read; the constraint calls it inside the reconciliation fence.
+### The event identifier
 
-```kotlin
-val constraint = HealthConnectSynchronizationConstraint(
-    coordinator = coordinator,
-    fullReader = HealthConnectFullReader { type -> healthClient.readAll(type) },
-    now = Instant::now,
-)
-```
+An `ExchangeEventIdentifier` names one export: the producer instance, a UUID this installation generated once, and a monotonic sequence.
+Every export is an immutable event.
+A retry resends the same bytes under the same identifier; a new revision of the record gets the next sequence.
+The producer instance comes from your installation state; the sequence is a counter you reserve before you convert.
+Persist both, because a receiver cannot repair a sequence that was reused for different content.
 
-The default lease timing is appropriate for ordinary on-device export. A caller
-may supply `RoomHealthConnectJournalOptions` for an unusually slow or contended
-deployment; shortening leases increases false lease-loss risk. Close the journal
-only when the owning application component is permanently stopping.
+### The repository scope
 
-The public `00..1f` key in the Grove conformance vectors is rejected by the
-production `GroveHmacIdentityKey` constructor. A production key must contain at
-least 32 random bytes. Rotation changes both epoch and Identifier system; old
-epochs must remain available while their outputs can be replayed or retracted.
+A `BusinessIdentifier` names the Health Connect store the record was read from: a system URI you own and one stable token per installation.
+Two stores must never collide: the same record id on two phones, or after a reinstall that regenerated the token, must yield different source-record identities.
+The token comes from your installation state; the system is a URI under your deployment root.
+Persist the token with the producer instance, and decide deliberately whether a reinstall keeps it.
+
+### The application
+
+An `ApplicationDevice` names the app that assembled the graph: its name, package name and version.
+The conversion provenance names this assembler, so a receiver can tell which build produced a graph.
+`ApplicationDevice.from(context)` reads it from the package manager on every export; there is nothing to persist.
+
+Health Connect adds one decision the shared defaults leave open: whether user-authored session titles and notes leave the device.
+`HealthConnectConversionOptions` takes that policy explicitly; everything else in it defaults to omit.
+
+> Note: `host` and `conversionInstant` have defaults.
+> The host is read from `Build` through `HostDevice.current()` and the conversion instant is `Instant.now()`.
+> Pass them explicitly when you convert on behalf of another device or replay a conversion at a fixed instant, as the conformance tests do.
+
+## Assemble it
+
+Once per installation: derive the systems, create the scope and read the application.
+`identityKey` is your HMAC key, `keyId` and `keyEpoch` its persisted id and epoch, and `context` your Android context.
 
 ```kotlin
-val identityKey = GroveHmacIdentityKey(
-    identifierSystemFamily = "https://study.example/fhir/NamingSystem/grove-opaque-v0",
-    keyId = managedKeyId,
-    epoch = managedKeyEpoch,
-    secret = managedKeyBytes,
+val systems = DeploymentIdentifierSystems.derived(
+    root = IdentifierSystem("https://study.example.org/fhir"),
+    keyId = keyId,
+    epoch = keyEpoch,
 )
+val scope = OpaqueIdentityScope(systems = systems, keyId = keyId, epoch = keyEpoch, key = identityKey)
+val application = ApplicationDevice.from(context)
+```
 
-val scope = HealthConnectSynchronizationScope.create(
-    repositoryScope = persistedRepositoryScope,
-    producerInstance = persistedProducerInstanceUuid,
-    configurationFingerprint = exactReadFilterFingerprint,
-    identityKey = identityKey,
-)
+Per export: reserve the next sequence and create the context, using every default.
 
-val converter = HealthConnectConverter(
-    context = HealthConnectConversionContext(
-        subject = HealthConnectPatientSubject.Bundled(participantPatient),
-        assembler = converterApplicationDevice,
-        assemblerHost = currentHostFacts()?.let { host ->
-            HealthConnectHostDeviceResource(
-                sourceDeviceToken = host.governedSnapshotToken,
-                resource = host.fhirTemplate,
-            )
-        },
-        eventIdentifierSystem = "https://study.example/fhir/NamingSystem/grove-event-v0",
-        entryNodeIdentifierSystem = "https://study.example/fhir/NamingSystem/grove-entry-node-v0",
-        userAuthoredTextPolicy = HealthConnectUserAuthoredTextPolicy.RETAIN,
-        // Optional: omit this block unless wire-level native round-trip is required.
-        nativeIdentifierDisclosure = HealthConnectNativeIdentifierDisclosure(
-            system =
-                "https://study.example/fhir/identifiers/device-7/health-connect-records",
-            type = HealthConnectNativeIdentifierType(
-                text = "Health Connect repository record id",
-            ),
-        ),
-        recordingDevice = { sourceDevice ->
-            deviceRegistry.stablePerUnitToken(sourceDevice)?.let { token ->
-                HealthConnectRecordingDeviceResource(
-                    stablePerUnitToken = token,
-                    resource = recordingDeviceDescription(sourceDevice),
-                )
-            }
-        },
-    ),
-    synchronizationScope = scope,
-)
-
-val outcome = converter.convertOutcome(
-    record = recordReadFromHealthConnect,
-    convertedAt = assemblyInstant,
-    eventSequence = persistedNextEventSequence,
+```kotlin
+val event = ExchangeEventIdentifier(systems.event, producerInstance, nextSequence)
+val context = HealthConnectConversionContext(
+    subject = subject,
+    event = event,
+    identityScope = scope,
+    repositoryScope = repositoryScope,
+    application = application,
+    options = HealthConnectConversionOptions(userAuthoredText = UserAuthoredTextPolicy.OMIT),
 )
 ```
 
-`userAuthoredTextPolicy` is intentionally mandatory: choose `RETAIN` to emit
-admitted Health Connect titles/notes or `OMIT` to suppress them. Neither behavior
-is an implicit default or inferred privacy policy.
+Convert one record and hand the Bundle to your uploader.
 
-Use `HealthConnectPatientSubject.Logical` with a complete, deployment-owned
-pseudonymous `Identifier` when the receiver resolves the participant by logical
-identity; Grove emits an identifier-only reference and does not fabricate a
-`Patient` entry. Use `HealthConnectPatientSubject.Bundled` only when concrete
-patient facts belong in the event Bundle.
-
-`convertOutcome` is the module's conversion entry point, and it distinguishes
-`Converted`, `Unsupported`, and `Rejected` so record-data rejection stays part of
-normal collection flow.
-Producer configuration and graph-invariant failures are programming errors and
-still throw.
-A converter-only integration owns the positive monotonic event counter it passes
-as `eventSequence`; the coordinator path below allocates that sequence from the
-journal instead.
-
-## Identity and privacy
-
-Every produced Observation carries two mandatory Grove-typed opaque identifiers:
-`source-record` and `source-output`. A synthesized glucose Specimen carries the
-same source-record identity plus its own `source-output` identity, whose
-`specimen` discriminator is the exact admitted source enum. Writer records and
-recording Devices have separate domains. Values use the normative
-`v0:<keyId>:<epoch>:<base64url HMAC-SHA-256>` form over unsigned 32-bit
-length-framed UTF-8 fields. Repository scope and stable physical-device tokens
-are never serialized. Writer ids are emitted only as separately scoped opaque
-writer-record identities: a record carrying a validated `clientRecordId`
-additionally emits a `writer-record` identity, so such an Observation carries
-three. Raw Health Connect record ids are omitted by default.
-
-The closed protocol implementation also recognizes the Provider-specific
-`provider-output` and `provider-artifact` domains even though this adapter emits
-the generic Health Connect source domains. This keeps normative parsing and
-vector behavior aligned with the complete Mobile exchange protocol rather than
-silently treating Provider coordinates as generic source coordinates.
-
-When a deployment explicitly configures `nativeIdentifierDisclosure`, Grove
-adds the exact `Metadata.id` under that caller-owned absolute repository/store
-system to the one-to-one primary Observation. The native Identifier supplements
-the two mandatory Grove identities; it is never an event, entry, or retraction
-key. It is not repeated on heart-rate/sample outputs, sleep stages, workout
-segments or laps, skin-temperature deltas, present-nutrient outputs, synthesized
-Specimens, Devices, or Provenance. Series and fan-out records without a single
-primary output therefore do not carry it. Grove event, entry-node, opaque
-identity, and identifier-role systems are rejected for this purpose.
-
-Output identity is independent of mutable clinical values. Exactly-one outputs
-use role `single` and their measurement id; sample outputs use `sample` and
-`<UTC9>|<occurrence>`; sleep stages use `sleep-stage` and
-`<start>|<end>|<source-token>|<occurrence>`; present nutrients use
-`present-field` and their measurement id. This makes a corrected value retain
-its source slot identity while same-time duplicates remain distinct. For ordered
-Health Connect sample and stage lists, `occurrence` is assigned among identical
-canonical coordinates in the exact platform-list order before output sorting.
-The adapter never derives identity from a clinical value or unordered iteration.
-
-Event values are clear `e0:<producer-instance>:<positive-sequence>` identifiers.
-Entries without a selected business identity use deterministic `n0:` entry-node
-keys. Bundle `fullUrl` values are UUIDv5 over the length-framed complete
-Identifier pair using the Grove namespace. UUIDv5 is graph addressing, not a
-privacy control.
-
-A shared FHIR Device means one physical instance. Manufacturer and model are
-descriptive only, so a recording Device is omitted unless the deployment
-supplies a governed stable per-unit token. Grove HMACs that token into a stable
-typed `recording-device` identity and a separate event-scoped `device-snapshot`;
-the snapshot is the Bundle entry key. Recording Device templates cannot carry
-caller identifiers, and `Device.serialNumber` is never admitted.
-
-Application and host hardware are also separate immutable snapshots. When an
-`assemblerHost` is supplied, Grove emits one profiled host snapshot and links
-the converter application snapshot to it through `Device.parent`;
-operating-system facts stay on the host rather than being folded into an
-application version.
-
-`Metadata.dataOrigin.packageName` has a deliberately different identity model.
-The conversion Provenance carries it at `Provenance.entity.agent.who` as a typed,
-identifier-only logical `Device` Reference using
-`https://grovealliance.org/fhir/health-connect/NamingSystem/android-package-name`.
-It identifies an application product, not an installation, host, account,
-person, or physical recorder. Grove does not fabricate a Bundle Device entry or
-claim a Device profile for that logical reference.
-
-HMAC identifiers do not de-identify the patient, clinical values, timestamps,
-relationships, or payloads in a Bundle.
-
-## Clinical and lifecycle semantics
-
-- `Observation.effective[x]` comes from the source clinical time. Mobile
-  effective instants use the guide's millisecond half-even policy while identity
-  inputs retain exact nanoseconds.
-- `Observation.issued` is `Metadata.lastModifiedTime`.
-- A present `Metadata.id` must be nonblank Unicode-scalar text. Its
-  `clientRecordVersion` must be non-negative (including `0` and
-  `Long.MAX_VALUE`); a negative version fails closed. When `Metadata.id` is
-  absent, AndroidX exposes no presence bit for the default version, so neither
-  a writer id nor version is emitted.
-- conversion `Provenance.occurred[x]` is the emitted source activity time or
-  span, `Provenance.recorded` is the assertion time, and `Bundle.timestamp` is
-  assembly time.
-- `RestingHeartRateRecord` is a point `effectiveDateTime` with LOINC `40443-4`;
-  the producer does not invent a daily average.
-- Mindfulness type and VO2 max measurement method retain their exact AndroidX
-  tokens in Health Connect code systems through `Observation.method`. The
-  configured text policy consistently retains or omits nonblank mindfulness,
-  exercise, and sleep titles through the one shared session-title extension and
-  notes through `Observation.note`.
-- Cycling cadence, power, speed, step cadence, heart rate, and skin temperature
-  emit one Observation per source sample/delta. Nutrition emits one Observation
-  per present nutrient, including biotin. Blood glucose emits exactly one of the
-  four admitted specimen-profile alternatives and one deterministic Specimen;
-  unknown and tear sources are rejected.
-- Updates first emit a separate retraction for every prior output/artifact and
-  event-scoped Device snapshot, then a new active event. Retractions contain one
-  profiled Provenance and no copied clinical resource or value. Each target is a
-  typed complete Identifier pair with a closed target-role extension.
-
-`HealthConnectFieldDispositions` inventories every public top-level, metadata,
-and nested field in the pinned AndroidX 1.1.0 source API. Tests fail when a field
-is added without a mapped, intentionally omitted, rejected, or unavailable
-disposition. `PlannedExerciseSessionRecord` remains the only deferred type; the
-other 40 source types are explicitly supported.
-
-## Retry and sink rules
-
-Use `HealthConnectExportCoordinator` for durable export. An exact retry reuses
-the event Identifier, all times, entry keys, JSON bytes, and checksum. A content
-or source-version change receives a new sequence. The sink must durably and
-idempotently apply the complete batch before returning its acknowledgement and
-must index complete `(Identifier.system, Identifier.value)` pairs. A collection
-Bundle has no transaction or delete semantics; atomic application and lifecycle
-policy belong to the sink.
-
-The journal implementation must issue renewable, monotonically fenced leases
-across coordinator instances and processes sharing one device-local repository. A source transition checks
-its live fence and base revision at stage, local storage, and exact-event
-completion; a reconciliation additionally holds one repository/type fence while
-it invokes the complete-read callback, drains pending events, upserts present
-records, and derives absence. Do not read the complete source list before calling
-`reconcile`: the callback API deliberately puts that read inside the fence. A
-database-backed implementation must not keep a database transaction open across
-the source read or sink network I/O.
-
-The adversarial in-memory journal is test-only. Production integrations should
-use `RoomHealthConnectExportJournal`, which implements the same port with exact
-payload persistence, global sequence allocation, revision CAS, and renewable
-monotonic fences. The application must still integration-test its managed
-identity key/epoch, persistent producer instance, exact read-filter fingerprint,
-changes-token commit ordering, backup/retention policy, and idempotent
-destination sink; those policies cannot be inferred by this FHIR library.
-
-## Conformance
-
-The producer tests lock the normative HMAC, Unicode, event, entry-node, and
-UUIDv5 vectors; output-count rules; clinical mappings; immutable retry payloads;
-and active/retraction graph shapes. The active boundary admits only the closed
-output, supporting, and lifecycle resource type sets; prohibits contained
-resources; resolves every literal reference inside the Bundle; closes direct
-Observation, DocumentReference, Device, QuestionnaireResponse, and Provenance
-profile modes; requires exactly one transform Provenance; and rejects
-disconnected support. The shared structured corpus is pinned to its exact 36
-reviewed negative cases. The capability export reports the exact AndroidX
-baseline and supported/deferred inventory.
-
-Run the offline official-validator lane from a clean producer revision with the
-exact packages built from the relevant Grove FHIR Implementation Guide checkout:
-
-```bash
-./Scripts/validate-health-connect-fhir-conformance.sh \
-  --grove-fhir /path/to/grove-fhir \
-  --mobile-package /path/to/mobile/package.tgz \
-  --health-connect-package /path/to/health-connect/package.tgz \
-  --validator-jar /path/to/validator_cli.jar
+```kotlin
+when (val result = HealthConnectConverter().convert(record, context)) {
+    is HealthConnectConversionResult.Converted -> upload(result.conversion.graph.json.toByteArray())
+    is HealthConnectConversionResult.NoOutput -> Unit
+    is HealthConnectConversionResult.Failed -> log(result.failure.diagnostic)
+}
 ```
 
-The script invokes the catalog generator by repository-absolute path and
-deliberately refuses a dirty source tree—including generator changes—so generated
-fixtures can be attributed to one exact producer revision.
+The three blocks are compiled as `HealthConnectWalkthrough` in the module's tests, so they cannot drift from the API.
 
-`HealthConnectContract.kt` and `grove-exchange-protocol-test-vectors.json` are
-generated from the grove-fhir catalogs and must never be hand-edited. Rewrite
-both after a catalog or pin change:
+| What to persist | Why |
+| --- | --- |
+| The event sequence | The next export must use a sequence no earlier export used, across process restarts. |
+| The key id and epoch | They are part of every identifier system; the scope must mint under the same ones the receiver already knows. |
+| The producer instance id | It is half of every event identifier; a new one makes every later event look like another producer. |
+| The repository scope token | It is part of every source-record identity; a new one makes every record look new. |
 
-```bash
-python3 Scripts/generate-grove-fhir-kotlin-contract.py \
-  --catalog-directory /path/to/grove-fhir/catalog
+> Important: Never reuse a sequence for different content.
+> A retry is the same bytes under the same identifier; anything else is a new revision under the next sequence.
+
+> Important: Never change the key or the epoch without deriving the systems again.
+> The systems carry the key id and epoch; a scope whose key changed under unchanged systems mints identifiers that match nothing a receiver holds and collide with nothing it can detect.
+
+## Beyond the minimum
+
+### Study enrollment
+
+When the participant's enrollment is known, pass it and the graph bundles the ResearchStudy, its exact-revision PlanDefinition and one ResearchSubject as entry-node keyed entries; every output then names the study.
+A bundled Patient replaces the logical pseudonym with `Subject.Bundled`.
+
+```kotlin
+val enrollment = StudyEnrollment(study = studyIdentifier, protocolUrl = protocolUrl, protocolVersion = "2026.08", enrollment = enrollmentIdentifier)
+HealthConnectConversionContext(subject, event, scope, repositoryScope, application, options, studies = listOf(enrollment))
 ```
 
-Adding `--check` reports staleness instead of writing, which is how CI gates the
-pair.
+See [StudyEnrollment](https://grovealliance.org/fhir/mobile/study.html) in the Mobile guide.
+
+### Disclosure policies
+
+Every disclosure defaults to omit.
+`routeDisclosure` keeps exercise routes off the graph, `nativeIdentifierDisclosure` keeps the Health Connect record id out of every identifier, and `recordingDevice` never names a physical device because Health Connect supplies no stable per-unit token.
+A deployment that governs its own namespace may pass `GovernedSourceIdentifierDisclosurePolicy.Authorized(system)`; the system must not be one of the twelve Grove systems.
+
+```kotlin
+HealthConnectConversionOptions(
+    userAuthoredText = UserAuthoredTextPolicy.RETAIN,
+    recordingDevice = RecordingDeviceResolver { device -> registry.stableUnitToken(device)?.let { RecordingDevice(it, name = device.model) } },
+    nativeIdentifierDisclosure = GovernedSourceIdentifierDisclosurePolicy.Authorized(IdentifierSystem("https://study.example.org/fhir/identifiers/health-connect-records")),
+)
+```
+
+### Repository ids
+
+A receiver that assigns its own resource ids may tell the producer which id to write on the Bundle, the Provenance or a device snapshot through `repositoryIds`; nothing in the identities depends on them.
+
+```kotlin
+repositoryIds = mapOf(ExchangeGraphNode.BUNDLE to RepositoryId("event-44"))
+```
+
+### A distinct gateway application
+
+When a companion app wrote the record and your app only assembled the graph, name the companion as the gateway and the provenance keeps both apart.
+
+```kotlin
+converterRole = ConverterRole.GatewayApplication(ApplicationDevice(name = "Wearable Companion", packageName = "com.example.wearable", version = "4.0"))
+```
+
+### Warnings
+
+A converted record can carry warnings, each a registered `mobile-omission` diagnostic naming what the graph lost.
+`RecordingDeviceOmitted` means the record named a device the resolver did not identify; `SourceOffsetUnavailable` means a sample or stage had no usable UTC offset and was written in UTC; `UnmodeledMetadataWithheld` names source fields the contract has no place for, such as a planned exercise session id.
+Log them with the graph; they never block an upload.
+
+### Batch conversion
+
+`convert(records) { record -> context }` converts many records and returns the conversions and the refusals in input order.
+The callback reserves one context, and therefore one event sequence, per record.
+
+```kotlin
+val batch = HealthConnectConverter().convert(records) { record -> exportContext(reserve(record)) }
+```
+
+### Retries and semantic equality
+
+Store `graph.json` and `graph.sha256` with the sequence.
+A retry resends the stored bytes; to check that a Bundle a receiver returned is the same event, parse it and compare with `semanticallyEquals`, which ignores formatting and nothing else.
+
+```kotlin
+val replay = ExchangeGraph.parse(ExchangeGraphKind.ACTIVE, json) as ExchangeGraphParseResult.Valid
+replay.graph.semanticallyEquals(conversion.graph)
+```
+
+### Retraction events
+
+When a record disappears from Health Connect, emit a retraction naming every node of its last active graph.
+`retractionTargets` derives the targets from the catalog for record types with exactly one output per measurement; series and sessions need the stored graph's own `retractionTargets()`.
+
+```kotlin
+val targets = HealthConnectConverter().retractionTargets(HealthConnectSourceRecord(id, HealthConnectSourceType.STEPS), context.event)
+val retraction = RetractionEvent(targets, nextContext.event, sourceRecordIdentity, retractedAt = Instant.now())
+```
+
+### Reverse projection
+
+An output, or a whole graph, projects back onto the AndroidX record it came from.
+`Observation.toHealthConnectRecord()` handles the exactly-one types and `ExchangeGraph.toHealthConnectRecords()` folds series, sessions, specimens and nutrients back together; the client record id defaults to the source-output identity.
+
+```kotlin
+val record = (observation.toHealthConnectRecord() as HealthConnectProjectionResult.Projected).record
+```
+
+### The conformance lane
+
+`Scripts/validate-health-connect-fhir-conformance.sh` regenerates the contract from the grove-fhir catalogs, exports the deterministic fixture corpus from the tests and validates it with the official FHIR validator against the exact Mobile and Health Connect packages.
+Run it against a grove-fhir checkout before you publish a change to the adapter.
+
+## Glossary
+
+| IG term | Kotlin type |
+| --- | --- |
+| Exchange event | `ExchangeEventIdentifier` with its `ExchangeEventContext` |
+| Exchange graph | `ExchangeGraph`, parsed through `ExchangeGraph.parse` |
+| Business identifier | `BusinessIdentifier` |
+| Identifier role | `GroveIdentifierRole` on a `RoledIdentifier` |
+| Opaque identity | `OpaqueIdentityScope` minting under `DeploymentIdentifierSystems` |
+| Entry-node key | `EntryNodeKey` |
+| Subject | `Subject.Logical` or `Subject.Bundled` |
+| Study enrollment | `StudyEnrollment` |
+| Application, host and recording device | `ApplicationDevice`, `HostDevice`, `RecordingDevice` |
+| Writer | `HealthConnectContract.WRITER_PACKAGE_SYSTEM` on the provenance agent and the writer-record identity |
+| Retraction event and target | `RetractionEvent`, `RetractionTarget` |
+| Governed source identifier | `GovernedSourceIdentifierDisclosurePolicy` |
+| Producer diagnostic | `ExchangeGraphDiagnostic` on every failure, warning and refusal |
+
+# Package org.grovealliance.health.fhir
+
+The Health Connect adapter: `HealthConnectConverter` and its context, options, results, warnings and failures, the generated catalog and contract constants, and the reverse projection onto AndroidX records.

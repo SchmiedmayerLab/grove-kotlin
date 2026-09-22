@@ -35,6 +35,7 @@ fragmentCompose = "1.9.0"
 fragmentKtxVersion = "1.9.0"
 googleGmsGoogleServices = "4.5.0"
 googleid = "1.2.0"
+gson = "2.13.1"
 guava = "33.7.1-android" # is a fixed version which works with all other dependencies
 healthConnectClient = "1.1.0"
 healthConnectTesting = "1.0.0-alpha04"
@@ -113,6 +114,7 @@ firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-fires
 firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
 firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+google-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
@@ -140,6 +142,7 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "kspVersion" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 paparazzi = { id = "app.cash.paparazzi", version.ref = "paparazziVersion" }

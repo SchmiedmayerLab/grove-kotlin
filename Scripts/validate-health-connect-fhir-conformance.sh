@@ -104,8 +104,7 @@ health_connect_package="$(canonical_file "$health_connect_package")"
 # catalog change that never reached this repository has to fail here rather than at runtime.
 python3 -B "$repository_root/Scripts/generate-grove-fhir-kotlin-contract.py" \
     --catalog-directory "$grove_fhir_root/catalog" \
-    --output "$repository_root/health-fhir/src/main/kotlin/org/grovealliance/health/fhir/HealthConnectContract.kt" \
-    --test-vector-output "$repository_root/health-fhir/src/test/resources/grove-exchange-protocol-test-vectors.json" \
+    --repository-root "$repository_root" \
     --check
 
 require_regular_file "FHIR Validator jar" "$validator_jar"
@@ -120,10 +119,10 @@ producer_inputs=(
     "Scripts/validate-health-connect-fhir-conformance.sh"
     "build-logic"
     "build.gradle.kts"
+    "fhir-contract"
     "gradle"
     "gradle.properties"
     "gradlew"
-    "health"
     "health-fhir"
     "settings.gradle.kts"
 )
@@ -137,7 +136,7 @@ assert_clean_producer_inputs() {
     fi
     ignored="$(
         git -C "$repository_root" ls-files --others --ignored --exclude-standard -- \
-            Scripts build-logic/src gradle health/src health-fhir/src
+            Scripts build-logic/src fhir-contract/src gradle health-fhir/src
     )"
     if [[ -n "$ignored" ]]; then
         echo "Ignored files exist inside executable producer input roots:" >&2
@@ -164,7 +163,8 @@ capability_path="$generated_root/health-connect-capabilities.json"
         GROVE_CAPABILITY_EXPORT="$capability_path" \
         GROVE_EXCHANGE_PROTOCOL_CATALOG="$grove_fhir_root/catalog/exchange-protocol.json" \
         GROVE_MOBILE_EXCHANGE_CORPUS_DIRECTORY="$grove_fhir_root/Conformance/corpora/mobile-exchange" \
-        ./gradlew :health-fhir:testDebugUnitTest --rerun-tasks --console=plain
+        GROVE_RECEIVER_LIFECYCLE_CORPUS_DIRECTORY="$grove_fhir_root/Conformance/corpora/receiver-lifecycle" \
+        ./gradlew :fhir-contract:test :health-fhir:testDebugUnitTest --rerun-tasks --console=plain
 )
 assert_clean_producer_inputs
 

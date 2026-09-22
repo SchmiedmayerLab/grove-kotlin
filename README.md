@@ -46,7 +46,8 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | [`questionnaire`](questionnaire/) | FHIR questionnaire rendering and responses. |
 | [`markdown`](markdown/) | Markdown parsing and rendering. |
 | [`health`](health/) | Health Connect access. |
-| [`health-fhir`](health-fhir/README.md) | Converts Health Connect records into FHIR R4 against the shared Grove contract. |
+| [`fhir-contract`](fhir-contract/README.md) | The Grove Mobile exchange contract: identities, event context, graph assembly and validation shared by every Kotlin producer. |
+| [`health-fhir`](health-fhir/README.md) | Converts Health Connect records into Grove Mobile exchange graphs. |
 | [`scheduler`](scheduler/) | Task schedules, occurrences, and notifications. |
 | [`study`](study/) | Study enrollment and lifecycle. |
 | [`study-definition`](study-definition/) | Study bundles and the study definition model. |
