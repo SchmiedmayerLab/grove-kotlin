@@ -49,7 +49,6 @@ minSdk = "30"
 navigation3 = "1.1.4"
 paparazziVersion = "2.0.0-alpha05"
 playServicesAuth = "22.0.0"
-robolectric = "4.16.1"
 room = "2.8.5"
 rulesVersion = "1.7.0"
 runnerVersion = "1.7.0"
@@ -88,7 +87,6 @@ androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name 
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 androidx-security-crypto-ktx = { group = "androidx.security", name = "security-crypto-ktx", version.ref = "securityCryptoKtx" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "testCoreVersion" }
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "rulesVersion" }
@@ -128,7 +126,6 @@ navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", ver
 navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 paparazzi = { module = "app.cash.paparazzi:paparazzi", version.ref = "paparazziVersion" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
-robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timberVersion" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstdJni" }
 

@@ -36,15 +36,6 @@ android {
                 .asFile
                 .absolutePath
             test.systemProperty("grove.capability.export", System.getenv("GROVE_CAPABILITY_EXPORT") ?: defaultCapabilityExport)
-            System.getenv("GROVE_EXCHANGE_PROTOCOL_CATALOG")?.let { catalog ->
-                test.systemProperty("grove.exchange-protocol.catalog", catalog)
-            }
-            System.getenv("GROVE_MOBILE_EXCHANGE_CORPUS_DIRECTORY")?.let { corpusDirectory ->
-                test.systemProperty("grove.mobile-exchange.corpus-directory", corpusDirectory)
-            }
-            System.getenv("GROVE_HEALTH_CONNECT_CATALOG")?.let { catalog ->
-                test.systemProperty("grove.health-connect.catalog", catalog)
-            }
         }
     }
 }
