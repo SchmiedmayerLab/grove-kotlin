@@ -25,6 +25,7 @@ detekt = "1.23.8" # please adjust github action version as well in case of versi
 dokka = "2.2.0"
 espressoCore = "3.7.0"
 fhirDataCapture = "1.3.1"
+fhirCore = "6.10.3"
 firebaseAuthKtx = "23.2.1"
 firebaseFirestoreKtx = "25.1.4"
 firebaseFunctionsKtx = "21.2.1"
@@ -34,8 +35,10 @@ fragmentCompose = "1.9.0"
 fragmentKtxVersion = "1.9.0"
 googleGmsGoogleServices = "4.5.0"
 googleid = "1.2.0"
+gson = "2.13.1"
 guava = "33.7.1-android" # is a fixed version which works with all other dependencies
 healthConnectClient = "1.1.0"
+healthConnectTesting = "1.0.0-alpha04"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 kotlin = "2.4.0" # capped by the CodeQL Kotlin extractor, which supports versions up to 2.4.0
@@ -73,6 +76,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtxVersion" }
 androidx-fragment-compose = { module = "androidx.fragment:fragment-compose", version.ref = "fragmentCompose" }
 androidx-health-connect-client = { module = "androidx.health.connect:connect-client", version.ref = "healthConnectClient" }
+androidx-health-connect-testing = { module = "androidx.health.connect:connect-testing", version.ref = "healthConnectTesting" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleKtx" }
 androidx-lifecycle-view-model-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleKtx" }
@@ -108,9 +112,11 @@ firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-fires
 firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
 firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+google-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+hl7-fhir-r4 = { module = "ca.uhn.hapi.fhir:org.hl7.fhir.r4", version.ref = "fhirCore" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlin-gradle = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
@@ -133,6 +139,7 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "kspVersion" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 paparazzi = { id = "app.cash.paparazzi", version.ref = "paparazziVersion" }

@@ -17,6 +17,7 @@ plugins {
     alias(libs.plugins.google.devtools.ksp) version libs.versions.kspVersion apply false
     jacoco
     alias(libs.plugins.jetbrains.kotlin.android) apply false
+    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.google.gms.google.services) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
@@ -52,9 +53,13 @@ fun Project.setupDokka() {
 
     dokka {
         // Dokka v2 registers source sets from the Kotlin plugin, which the Android plugin does not
-        // provide; without this the modules document nothing.
-        if (file("src/main/kotlin").exists()) {
-            dokkaSourceSets.maybeCreate("main").sourceRoots.from(file("src/main/kotlin"))
+        // provide; without this the Android modules document nothing. A JVM module already has one.
+        listOf("com.android.library", "com.android.application").forEach { androidPlugin ->
+            pluginManager.withPlugin(androidPlugin) {
+                if (file("src/main/kotlin").exists()) {
+                    dokkaSourceSets.maybeCreate("main").sourceRoots.from(file("src/main/kotlin"))
+                }
+            }
         }
         dokkaSourceSets.configureEach {
             enableAndroidDocumentationLink.set(true)

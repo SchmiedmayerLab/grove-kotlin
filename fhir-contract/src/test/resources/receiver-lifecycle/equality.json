@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 0,
+  "contractLock": {
+    "baseSourceRevision": "928db16ef8bfd86d2a171727d2d1cb9f8979a442",
+    "baseExchangeProtocolSHA256": "bbc9e980c2c674d5ef6f9900958d29c5602031ead8a3b6325cff508799106bb5",
+    "releaseVersion": "0.6.0",
+    "fhirVersion": "4.0.1",
+    "exchangeProtocolSHA256": "fe6ab1a88f429b89116627044530764e460b97680430110f6f35846610a3eb70"
+  },
+  "equality": {
+    "formatting": "A replay that differs from the accepted event only in JSON member order, whitespace, or string escaping carries the same tokens and is the exact retry.",
+    "decimalLexeme": "A replay whose decimal lexeme differs, such as 72.0 for 72, is different content under a reused event identifier; the receiver retains the accepted event and disregards the replay exactly as any other altered retry.",
+    "vectors": "Conformance/corpora/receiver-lifecycle: reformatted-retry and lexeme-retry"
+  },
+  "events": {
+    "original": {
+      "path": "resources/original.json",
+      "sha256": "236e65092ac9eba15d22d10c2db48d267cba65bfa9dd86b9790f055c737c434e",
+      "eventIdentity": {
+        "type": {
+          "coding": [
+            {
+              "code": "event",
+              "system": "https://grovealliance.org/fhir/mobile/CodeSystem/grove-identifier-role",
+              "display": "Event"
+            }
+          ]
+        },
+        "system": "https://study.example.org/fhir/NamingSystem/grove-event-v0",
+        "value": "e0:1f5c58aa-6ec6-4e79-a682-829a9debd3f5:42"
+      }
+    },
+    "reformatted-retry": {
+      "path": "resources/reformatted-retry.json",
+      "sha256": "0593cfb669f79ded7b7b410f65d9f311f304b2cbc319f4e003032c2af2a9a347",
+      "eventIdentity": {
+        "type": {
+          "coding": [
+            {
+              "code": "event",
+              "system": "https://grovealliance.org/fhir/mobile/CodeSystem/grove-identifier-role",
+              "display": "Event"
+            }
+          ]
+        },
+        "system": "https://study.example.org/fhir/NamingSystem/grove-event-v0",
+        "value": "e0:1f5c58aa-6ec6-4e79-a682-829a9debd3f5:42"
+      }
+    },
+    "lexeme-retry": {
+      "path": "resources/lexeme-retry.json",
+      "sha256": "b9421e514143f623840b52225d3eb6c4e786ede89f1f65998f4d1a4f763e69fa",
+      "eventIdentity": {
+        "type": {
+          "coding": [
+            {
+              "code": "event",
+              "system": "https://grovealliance.org/fhir/mobile/CodeSystem/grove-identifier-role",
+              "display": "Event"
+            }
+          ]
+        },
+        "system": "https://study.example.org/fhir/NamingSystem/grove-event-v0",
+        "value": "e0:1f5c58aa-6ec6-4e79-a682-829a9debd3f5:42"
+      }
+    }
+  },
+  "sequences": [
+    {
+      "id": "reformatted-replay",
+      "steps": [
+        {
+          "event": "original",
+          "expect": {
+            "history": [
+              "original"
+            ],
+            "versions": [
+              "original"
+            ],
+            "current": [
+              "original"
+            ],
+            "pending": [],
+            "retracted": [],
+            "conflicts": [],
+            "visible": [
+              "original"
+            ],
+            "newlyVisible": [
+              "original"
+            ],
+            "references": {}
+          }
+        },
+        {
+          "event": "reformatted-retry",
+          "expect": {
+            "history": [
+              "original"
+            ],
+            "versions": [
+              "original"
+            ],
+            "current": [
+              "original"
+            ],
+            "pending": [],
+            "retracted": [],
+            "conflicts": [],
+            "visible": [
+              "original"
+            ],
+            "newlyVisible": [],
+            "references": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "lexeme-replay",
+      "steps": [
+        {
+          "event": "original",
+          "expect": {
+            "history": [
+              "original"
+            ],
+            "versions": [
+              "original"
+            ],
+            "current": [
+              "original"
+            ],
+            "pending": [],
+            "retracted": [],
+            "conflicts": [],
+            "visible": [
+              "original"
+            ],
+            "newlyVisible": [
+              "original"
+            ],
+            "references": {}
+          }
+        },
+        {
+          "event": "lexeme-retry",
+          "expect": {
+            "history": [
+              "original"
+            ],
+            "versions": [
+              "original"
+            ],
+            "current": [
+              "original"
+            ],
+            "pending": [],
+            "retracted": [],
+            "conflicts": [],
+            "visible": [
+              "original"
+            ],
+            "newlyVisible": [],
+            "references": {}
+          }
+        }
+      ]
+    }
+  ]
+}
