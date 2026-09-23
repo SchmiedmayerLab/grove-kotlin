@@ -55,7 +55,7 @@ jobs:
           repository: SchmiedmayerLab/grove-fhir
           # Pinned so a contract change is a visible edit here, not a silent CI drift.
           # Past the 0.6.0 tag: 0.6.0 pins a Validator build upstream has since replaced.
-          ref: 96de131f036fa4116345864e098e8789204ff67f
+          ref: 9c5eff45622af55217c489cc985b162e6d9b8c75
           path: .grove-fhir
           persist-credentials: false
       - name: Record the Exact Grove FHIR Revision

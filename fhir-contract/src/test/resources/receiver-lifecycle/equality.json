@@ -1,7 +1,7 @@
 {
   "schemaVersion": 0,
   "contractLock": {
-    "baseSourceRevision": "444e06fb25680c3af29e5d3ccbebeb0249be7318",
+    "baseSourceRevision": "928db16ef8bfd86d2a171727d2d1cb9f8979a442",
     "baseExchangeProtocolSHA256": "bbc9e980c2c674d5ef6f9900958d29c5602031ead8a3b6325cff508799106bb5",
     "releaseVersion": "0.6.0",
     "fhirVersion": "4.0.1",
@@ -15,7 +15,7 @@
   "events": {
     "original": {
       "path": "resources/original.json",
-      "sha256": "ff6c49864a4cf56068022ea019de6d6efb424f0c01eb51278578a98a33f47e6d",
+      "sha256": "236e65092ac9eba15d22d10c2db48d267cba65bfa9dd86b9790f055c737c434e",
       "eventIdentity": {
         "type": {
           "coding": [
@@ -32,7 +32,7 @@
     },
     "reformatted-retry": {
       "path": "resources/reformatted-retry.json",
-      "sha256": "093a6dfd0cebc17b78073f1a64b4aae349fa37724903cb4e5b0c74da77368c9c",
+      "sha256": "0593cfb669f79ded7b7b410f65d9f311f304b2cbc319f4e003032c2af2a9a347",
       "eventIdentity": {
         "type": {
           "coding": [
@@ -49,7 +49,7 @@
     },
     "lexeme-retry": {
       "path": "resources/lexeme-retry.json",
-      "sha256": "7518697d093c4646c0a2b48aac74306f5c9ed195bb85617130379f1334c1803d",
+      "sha256": "b9421e514143f623840b52225d3eb6c4e786ede89f1f65998f4d1a4f763e69fa",
       "eventIdentity": {
         "type": {
           "coding": [
