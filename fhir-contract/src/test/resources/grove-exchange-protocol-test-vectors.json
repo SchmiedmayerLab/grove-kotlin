@@ -611,6 +611,34 @@
         "0"
       ],
       "expectedError": "provider-kind-required"
+    },
+    {
+      "id": "negative-part-index",
+      "identityKind": "source-artifact",
+      "components": [
+        "health-connect",
+        "HeartRateRecord",
+        "urn:uuid:1f5c58aa-6ec6-4e79-a682-829a9debd3f5",
+        "default",
+        "record-heart-001",
+        "heart-rate-samples",
+        "-1"
+      ],
+      "expectedError": "non-canonical-part-index"
+    },
+    {
+      "id": "leading-zero-part-index",
+      "identityKind": "provider-artifact",
+      "components": [
+        "google-health-api",
+        "heart-rate",
+        "https://accounts.example.org",
+        "patient|α",
+        "recording-001",
+        "provider-recording",
+        "01"
+      ],
+      "expectedError": "non-canonical-part-index"
     }
   ],
   "event": {
