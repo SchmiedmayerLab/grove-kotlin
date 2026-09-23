@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.grovealliance.fhir.ConformanceFixtures.applyPatch
 import org.grovealliance.fhir.ConformanceFixtures.string
+import org.hl7.fhir.r4.model.ResourceType
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
@@ -41,6 +42,7 @@ class ExchangeGraphCorpusTest {
         )
         val declared = retraction.retractionTargets().single()
         assertThat(declared.role).isEqualTo(RetractionTargetRole.PRIMARY_OUTPUT)
+        assertThat(declared.resourceType).isEqualTo(ResourceType.Observation)
         assertThat(declared.identifier).isEqualTo(derived.single { it.role == RetractionTargetRole.PRIMARY_OUTPUT }.identifier)
         assertThat(requireNotNull(declared.nativeRecordIdentifier).value).isEqualTo("record-heart-001")
         assertThat(active.semanticallyEquals(parse(ExchangeGraphKind.ACTIVE, active.json))).isTrue()

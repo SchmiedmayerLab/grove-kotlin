@@ -38,7 +38,7 @@ class HealthConnectProjectionTest {
         assertThat(record.endTime).isEqualTo(source.endTime)
         assertThat(record.startZoneOffset).isEqualTo(source.startZoneOffset)
         assertThat(record.metadata.recordingMethod).isEqualTo(Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED)
-        assertThat(record.metadata.clientRecordId).isEqualTo(observation.sourceOutputIdentity()?.identifier?.value)
+        assertThat(record.metadata.clientRecordId).isEqualTo(observation.sourceOutputIdentifier()?.identifier?.value)
         val named = observation.toHealthConnectRecord("client-7") as HealthConnectProjectionResult.Projected
         assertThat(named.record.metadata.clientRecordId).isEqualTo("client-7")
     }

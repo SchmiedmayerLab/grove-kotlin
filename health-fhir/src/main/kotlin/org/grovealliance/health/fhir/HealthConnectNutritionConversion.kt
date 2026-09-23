@@ -65,7 +65,7 @@ internal fun RecordConversion.convertNutrition(record: NutritionRecord): HealthC
         if (record.name != null) add("${type.token}.name")
         if (record.mealType != MealType.MEAL_TYPE_UNKNOWN) add("${type.token}.mealType")
     }
-    if (withheld.isNotEmpty()) warn(HealthConnectConversionWarning.UnmodeledMetadataWithheld(withheld))
+    if (withheld.isNotEmpty()) warn(HealthConnectConversionWarning.UnmodeledMetadataWithheld(withheld.sorted()))
     val effective = period(record.startTime.at(record.startZoneOffset) until record.endTime.at(record.endZoneOffset), type.token)
     val outputs = NUTRIENT_FIELDS.mapNotNull { (measurement, extract) ->
         val value = extract(record) ?: return@mapNotNull null

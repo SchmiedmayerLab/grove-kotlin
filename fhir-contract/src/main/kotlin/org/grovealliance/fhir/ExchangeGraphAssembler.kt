@@ -53,15 +53,15 @@ public class ExchangeGraphAssembler(
     ).withSnapshotIdentifier()
 
     /** The converter application snapshot entry, linked to its host. */
-    public val applicationEntry: GraphEntry = applicationSnapshot(context.application, ExchangeGraphNode.APPLICATION_DEVICE)
+    public val applicationEntry: GraphEntry = applicationSnapshot(context.application, ids[ExchangeGraphNode.APPLICATION_DEVICE])
 
-    /** The distinct gateway application snapshot when the converter role names one. */
+    /** The distinct gateway application snapshot when the converter role names one; no [ExchangeGraphNode] addresses it. */
     public val gatewayApplicationEntry: GraphEntry? = (context.converterRole as? ConverterRole.GatewayApplication)
-        ?.let { applicationSnapshot(it.application, ExchangeGraphNode.SOURCE_AUTHOR) }
+        ?.let { applicationSnapshot(it.application, repositoryId = null) }
 
     /** The recording Device entry when the adapter resolved a governed per-unit token. */
     public val recordingDeviceEntry: GraphEntry? = recordingDevice?.let { device ->
-        val physicalUnit = scope.recordingDevice(adapterId, context.subject.identity, device.stableUnitToken)
+        val physicalUnit = scope.recordingDevice(adapterId, context.subject.identifier, device.stableUnitToken)
         val snapshot = scope.deviceSnapshot(event, DeviceSnapshotRole.RECORDING_DEVICE, device.stableUnitToken)
         GraphEntry(
             snapshot,
@@ -81,7 +81,7 @@ public class ExchangeGraphAssembler(
     public val subjectReference: Reference
         get() = subjectEntry?.reference() ?: Reference().apply {
             type = PATIENT
-            identifier = context.subject.identity.toFhir()
+            identifier = context.subject.identifier.toFhir()
         }
 
     /** The gateway device an output names, or null when the converter only assembled. */
@@ -107,6 +107,12 @@ public class ExchangeGraphAssembler(
     /** The application snapshot identity that a retraction of this event's outputs names as assembler. */
     public val applicationSnapshot: RoledIdentifier
         get() = applicationEntry.identifier
+
+    /** The designated primary output, carrying the repository id the context assigns [ExchangeGraphNode.PRIMARY_OUTPUT]. */
+    public fun primaryOutput(entry: GraphEntry): GraphEntry = entry.withRepositoryId(ExchangeGraphNode.PRIMARY_OUTPUT)
+
+    /** A source-artifact DocumentReference, carrying the repository id the context assigns [ExchangeGraphNode.SOURCE_ARTIFACT]. */
+    public fun sourceArtifact(entry: GraphEntry): GraphEntry = entry.withRepositoryId(ExchangeGraphNode.SOURCE_ARTIFACT)
 
     /** Attaches the subject, recording device, gateway device and study references to one output. */
     public fun decorate(observation: Observation) {
@@ -180,16 +186,19 @@ public class ExchangeGraphAssembler(
         childOutputs = childOutputs,
         sourceArtifact = sourceArtifact,
         recordingDeviceSnapshot = recordingDeviceEntry?.identifier,
-        sourceAuthorSnapshot = gatewayApplicationEntry?.identifier,
-        sourceAuthorHostSnapshot = null,
+        writerSnapshot = null,
+        writerHostSnapshot = null,
     )
 
     private fun contextEntries(): List<GraphEntry> =
         listOfNotNull(subjectEntry, hostEntry, applicationEntry, gatewayApplicationEntry, recordingDeviceEntry) + studyEntries
 
-    private fun applicationSnapshot(application: ApplicationDevice, node: ExchangeGraphNode): GraphEntry = GraphEntry(
+    private fun applicationSnapshot(application: ApplicationDevice, repositoryId: RepositoryId?): GraphEntry = GraphEntry(
         scope.deviceSnapshot(event, DeviceSnapshotRole.APPLICATION, application.sourceDeviceToken),
-        application.resource().withRepositoryId(node).apply { parent = hostEntry.reference() },
+        application.resource().apply {
+            repositoryId?.let { id = it.value }
+            parent = hostEntry.reference()
+        },
     ).withSnapshotIdentifier()
 
     private fun studyContext(enrollment: StudyEnrollment, ordinal: Long): List<GraphEntry> {
@@ -231,6 +240,8 @@ public class ExchangeGraphAssembler(
     private fun <T : Resource> T.withRepositoryId(node: ExchangeGraphNode): T = apply {
         ids[node]?.let { id = it.value }
     }
+
+    private fun GraphEntry.withRepositoryId(node: ExchangeGraphNode): GraphEntry = GraphEntry(identifier, resource.withRepositoryId(node))
 
     private companion object {
         const val PATIENT = "Patient"

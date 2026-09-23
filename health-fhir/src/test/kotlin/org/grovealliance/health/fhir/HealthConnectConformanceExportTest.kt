@@ -8,12 +8,13 @@
 package org.grovealliance.health.fhir
 
 import com.google.common.truth.Truth.assertThat
+import org.grovealliance.fhir.GovernedSourceIdentifierDisclosurePolicy.Authorized
+import org.grovealliance.fhir.IdentifierSystem
 import org.grovealliance.fhir.RetractionEvent
 import org.grovealliance.fhir.Subject
 import org.hl7.fhir.r4.formats.IParser
 import org.hl7.fhir.r4.formats.JsonParser
 import org.hl7.fhir.r4.model.Observation
-import org.hl7.fhir.r4.model.Patient
 import org.hl7.fhir.r4.model.Provenance
 import org.junit.Test
 import java.io.File
@@ -26,9 +27,13 @@ class HealthConnectConformanceExportTest {
     private val converter = fixtures.converter
     private val parser: IParser = JsonParser().setOutputStyle(IParser.OutputStyle.PRETTY)
 
-    // The conformance kit's Health Connect glucose check compares literal Patient references, so the lane bundles one.
-    private val subject = Subject.Bundled(fixtures.conformanceSubject, Patient())
+    private val subject = Subject.Logical(fixtures.conformanceSubject)
     private val scope = fixtures.conformanceScope
+
+    // The deletion discloses its record id, so the validator also sees a retraction target's native identifier.
+    private val disclosing = fixtures.options.copy(
+        nativeIdentifierDisclosure = Authorized(IdentifierSystem("${fixtures.CONFORMANCE_ROOT}/identifiers/health-connect-records")),
+    )
 
     @Test
     fun `emits the complete deterministic conformance and wire fixtures`() {
@@ -78,10 +83,10 @@ class HealthConnectConformanceExportTest {
         wire["health-connect-heart-rate-zero-output-retraction-bundle.json"] = zeroOutput.graph.json
         assertThat(zeroOutput.graph.toBundle().entry.map { it.resource.fhirType() }).containsExactly("Provenance")
 
-        val deletionContext = next()
+        val deletionContext = fixtures.context(sequence = ++sequence, options = disclosing, subject = subject, scope = scope)
         val steps = fixtures.converted(records.steps("fixture-deletion"), deletionContext)
         val deletion = RetractionEvent(
-            targets = converter.retractionTargets(steps.source, deletionContext.event),
+            targets = converter.retractionTargets(steps.source, deletionContext),
             context = next().event,
             sourceRecord = steps.identifiers.sourceRecord,
             retractedAt = Instant.parse("2026-08-19T18:00:02Z"),

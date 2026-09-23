@@ -18,11 +18,11 @@ If you already know the pieces, jump to [Beyond the minimum](#beyond-the-minimum
 A Health Connect record is a row in a store that only the phone it lives on can read.
 This module turns one such record into one immutable, self-describing FHIR Bundle, the exchange graph, that any receiver can deduplicate, correct and retract without knowing anything about Health Connect.
 Plain FHIR does not say whether two uploads are the same record, who assembled them, or which study they were collected for; Grove adds stable identities that never leak the native record id, provenance naming the application and the device that assembled the graph, and optional study context.
-A receiver gets a graph it can store, compare byte for byte on a retry, supersede by version and retract by identity.
+A receiver gets a graph it can store, recognize when a retry resends it, supersede by version and retract by identity.
 
 ## What you need and why
 
-Five inputs have no default because each one is a decision only your deployment can make.
+Five inputs have no default because each one is a decision only your deployment can make; everything else, the Health Connect options included, has one.
 They are assembled in this order.
 
 ### The subject pseudonym
@@ -62,12 +62,9 @@ An `ApplicationDevice` names the app that assembled the graph: its name, package
 The conversion provenance names this assembler, so a receiver can tell which build produced a graph.
 `ApplicationDevice.from(context)` reads it from the package manager on every export; there is nothing to persist.
 
-Health Connect adds one decision the shared defaults leave open: whether user-authored session titles and notes leave the device.
-`HealthConnectConversionOptions` takes that policy explicitly; everything else in it defaults to omit.
-
-> Note: `host` and `conversionInstant` have defaults.
-> The host is read from `Build` through `HostDevice.current()` and the conversion instant is `Instant.now()`.
-> Pass them explicitly when you convert on behalf of another device or replay a conversion at a fixed instant, as the conformance tests do.
+> Note: `host`, `conversionInstant` and `options` have defaults.
+> The host is read from `Build` through `HostDevice.current()`, the conversion instant is `Instant.now()` and `HealthConnectConversionOptions.Default` withholds everything a deployment has to authorize.
+> Pass them explicitly to convert on behalf of another device, to replay a conversion at a fixed instant as the conformance tests do, or to disclose more.
 
 ## Assemble it
 
@@ -94,7 +91,6 @@ val context = HealthConnectConversionContext(
     identityScope = scope,
     repositoryScope = repositoryScope,
     application = application,
-    options = HealthConnectConversionOptions(userAuthoredText = UserAuthoredTextPolicy.OMIT),
 )
 ```
 
@@ -132,15 +128,15 @@ A bundled Patient replaces the logical pseudonym with `Subject.Bundled`.
 
 ```kotlin
 val enrollment = StudyEnrollment(study = studyIdentifier, protocolUrl = protocolUrl, protocolVersion = "2026.08", enrollment = enrollmentIdentifier)
-HealthConnectConversionContext(subject, event, scope, repositoryScope, application, options, studies = listOf(enrollment))
+HealthConnectConversionContext(subject, event, scope, repositoryScope, application, studies = listOf(enrollment))
 ```
 
-See [StudyEnrollment](https://grovealliance.org/fhir/mobile/study.html) in the Mobile guide.
+See [study context](https://schmiedmayerlab.github.io/grove-fhir/study.html) in the Mobile guide.
 
 ### Disclosure policies
 
-Every disclosure defaults to omit.
-`routeDisclosure` keeps exercise routes off the graph, `nativeIdentifierDisclosure` keeps the Health Connect record id out of every identifier, and `recordingDevice` never names a physical device because Health Connect supplies no stable per-unit token.
+Every disclosure defaults to omit, and an omission a policy chose never warns.
+`userAuthoredText` keeps session titles and notes on the device, `routeDisclosure` keeps exercise routes off the graph, `nativeIdentifierDisclosure` keeps the Health Connect record id out of every identifier, and `recordingDevice` never names a physical device because Health Connect supplies no stable per-unit token.
 A deployment that governs its own namespace may pass `GovernedSourceIdentifierDisclosurePolicy.Authorized(system)`; the system must not be one of the twelve Grove systems.
 
 ```kotlin
@@ -153,7 +149,9 @@ HealthConnectConversionOptions(
 
 ### Repository ids
 
-A receiver that assigns its own resource ids may tell the producer which id to write on the Bundle, the Provenance or a device snapshot through `repositoryIds`; nothing in the identities depends on them.
+A receiver that assigns its own resource ids may tell the producer which id to write on the Bundle, the primary output, the Provenance or the application, host or recording device snapshot through `repositoryIds`; nothing in the identities depends on them.
+A Health Connect graph names its writer by package alone and emits no source artifact, so the context rejects an id for `WRITER`, `WRITER_HOST` or `SOURCE_ARTIFACT` when you create it.
+A `RECORDING_DEVICE` id refuses, with `RepositoryIdWithoutNode`, any record whose graph has no recording device because the record named none or the resolver declined it.
 
 ```kotlin
 repositoryIds = mapOf(ExchangeGraphNode.BUNDLE to RepositoryId("event-44"))
@@ -161,7 +159,8 @@ repositoryIds = mapOf(ExchangeGraphNode.BUNDLE to RepositoryId("event-44"))
 
 ### A distinct gateway application
 
-When a companion app wrote the record and your app only assembled the graph, name the companion as the gateway and the provenance keeps both apart.
+When a companion app mediated the measurement, for example by relaying it from a wearable, name it as the gateway.
+The graph carries it as a second application snapshot that every Observation links as its gateway device, while the provenance still names your app as the assembler and the app that wrote the record as the writer.
 
 ```kotlin
 converterRole = ConverterRole.GatewayApplication(ApplicationDevice(name = "Wearable Companion", packageName = "com.example.wearable", version = "4.0"))
@@ -170,7 +169,9 @@ converterRole = ConverterRole.GatewayApplication(ApplicationDevice(name = "Weara
 ### Warnings
 
 A converted record can carry warnings, each a registered `mobile-omission` diagnostic naming what the graph lost.
-`RecordingDeviceOmitted` means the record named a device the resolver did not identify; `SourceOffsetUnavailable` means a sample or stage had no usable UTC offset and was written in UTC; `UnmodeledMetadataWithheld` names source fields the contract has no place for, such as a planned exercise session id.
+`RecordingDeviceOmitted` means the record named a device the resolver did not identify and carries its manufacturer and model when known.
+`SourceOffsetUnavailable` names the effective element, `Observation.effectiveDateTime` or a bound of `Observation.effectivePeriod`, that had no source offset and was written in UTC.
+`UnmodeledMetadataWithheld` names, in sorted order, the source fields the contract has no place for, such as a planned exercise session id.
 Log them with the graph; they never block an upload.
 
 ### Batch conversion
@@ -196,11 +197,15 @@ replay.graph.semanticallyEquals(conversion.graph)
 
 When a record disappears from Health Connect, emit a retraction naming every node of its last active graph.
 `retractionTargets` derives the targets from the catalog for record types with exactly one output per measurement; series and sessions need the stored graph's own `retractionTargets()`.
+Pass the same conversion context the record was exported under: its native-identifier disclosure decides whether each target also carries the record's `Metadata.id` as a `BusinessIdentifier` in the policy's system, rendered beside the target's opaque identity.
+Omission, the default, names the targets by their opaque identities alone.
 
 ```kotlin
-val targets = HealthConnectConverter().retractionTargets(HealthConnectSourceRecord(id, HealthConnectSourceType.STEPS), context.event)
-val retraction = RetractionEvent(targets, nextContext.event, sourceRecordIdentity, retractedAt = Instant.now())
+val targets = HealthConnectConverter().retractionTargets(HealthConnectSourceRecord(id, HealthConnectSourceType.STEPS), context)
+val retraction = RetractionEvent(targets, nextContext.event, sourceRecord, retractedAt = Instant.now())
 ```
+
+This block is compiled with the walkthrough as well.
 
 ### Reverse projection
 
@@ -232,7 +237,7 @@ Run it against a grove-fhir checkout before you publish a change to the adapter.
 | Writer | `HealthConnectContract.WRITER_PACKAGE_SYSTEM` on the provenance agent and the writer-record identity |
 | Retraction event and target | `RetractionEvent`, `RetractionTarget` |
 | Governed source identifier | `GovernedSourceIdentifierDisclosurePolicy` |
-| Producer diagnostic | `ExchangeGraphDiagnostic` on every failure, warning and refusal |
+| Producer diagnostic | `ProducerDiagnostic` on every failure, warning and refusal |
 
 # Package org.grovealliance.health.fhir
 

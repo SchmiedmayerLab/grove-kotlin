@@ -12,8 +12,10 @@ import org.hl7.fhir.r4.formats.JsonParser
 import org.hl7.fhir.r4.model.Bundle
 import org.hl7.fhir.r4.model.CodeType
 import org.hl7.fhir.r4.model.Device
+import org.hl7.fhir.r4.model.Identifier
 import org.hl7.fhir.r4.model.Observation
 import org.hl7.fhir.r4.model.Provenance
+import org.hl7.fhir.r4.model.ResourceType
 
 /** The two immutable exchange events the protocol defines. */
 public enum class ExchangeGraphKind(public val profile: String) {
@@ -78,19 +80,19 @@ public class ExchangeGraph private constructor(
             val typed = typedGroveIdentifiers(resource)
             when {
                 resource is Device -> typed[GroveIdentifierRole.DEVICE_SNAPSHOT]?.let {
-                    RetractionTarget(it, resource.fhirType(), RetractionTargetRole.DEVICE_SNAPSHOT)
+                    RetractionTarget(it, resource.resourceType, RetractionTargetRole.DEVICE_SNAPSHOT)
                 }
                 resource.fhirType() in ExchangeContract.activeOutputResourceTypes -> {
                     val output = typed.getValue(GroveIdentifierRole.SOURCE_OUTPUT)
-                    val role = when (resource.fhirType()) {
-                        "DocumentReference" -> RetractionTargetRole.SOURCE_ARTIFACT
-                        "Specimen" -> RetractionTargetRole.SPECIMEN
-                        "Observation" ->
+                    val role = when (resource.resourceType) {
+                        ResourceType.DocumentReference -> RetractionTargetRole.SOURCE_ARTIFACT
+                        ResourceType.Specimen -> RetractionTargetRole.SPECIMEN
+                        ResourceType.Observation ->
                             if (entry.fullUrl in members) RetractionTargetRole.CHILD_OUTPUT else RetractionTargetRole.PRIMARY_OUTPUT
                         else -> RetractionTargetRole.PRIMARY_OUTPUT
                     }
                     val native = resource.directIdentifiers().singleOrNull { it.groveRoleCodings().isEmpty() }
-                    RetractionTarget(output, resource.fhirType(), role, native)
+                    RetractionTarget(output, resource.resourceType, role, native?.let(BusinessIdentifier::from))
                 }
                 else -> null
             }
@@ -103,12 +105,12 @@ public class ExchangeGraph private constructor(
                 target.getExtensionByUrl(ExchangeContract.RETRACTION_TARGET_ROLE_EXTENSION).value as CodeType
                 ).value
             val native = target.getExtensionByUrl(ExchangeContract.RETRACTION_TARGET_NATIVE_IDENTIFIER_EXTENSION)
-                ?.value as? org.hl7.fhir.r4.model.Identifier
+                ?.value as? Identifier
             RetractionTarget(
                 identifier = requireNotNull(RoledIdentifier.from(target.identifier)),
-                resourceType = target.type,
+                resourceType = ResourceType.fromCode(target.type),
                 role = requireNotNull(RetractionTargetRole.of(roleCode)),
-                nativeRecordIdentifier = native,
+                nativeRecordIdentifier = native?.let(BusinessIdentifier::from),
             )
         }
 

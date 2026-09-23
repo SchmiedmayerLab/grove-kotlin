@@ -10,10 +10,11 @@ package org.grovealliance.health.fhir
 import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.Record
+import org.grovealliance.fhir.BusinessIdentifier
 import org.grovealliance.fhir.ConversionBatch
-import org.grovealliance.fhir.ExchangeEventContext
 import org.grovealliance.fhir.ExchangeGraphException
 import org.grovealliance.fhir.ExchangeIdentityException
+import org.grovealliance.fhir.GovernedSourceIdentifierDisclosurePolicy
 import org.grovealliance.fhir.RetractionTarget
 
 /**
@@ -60,26 +61,28 @@ public class HealthConnectConverter {
      *
      * Only source types whose every output is an exactly-one measurement can be named without the
      * record's content; a fan-out type requires the stored graph's own `ExchangeGraph.retractionTargets()`.
+     * The record's `Metadata.id` rides along as each target's native record identifier exactly when the
+     * options' native-identifier disclosure authorizes it on the addition path.
      */
     public fun retractionTargets(
         record: HealthConnectSourceRecord,
-        context: ExchangeEventContext,
+        context: HealthConnectConversionContext,
     ): List<RetractionTarget> {
         val outputs = HealthConnectCatalog.outputs(record.type)
         require(outputs.isNotEmpty() && outputs.all { it.countRule == HealthConnectOutputCountRule.EXACTLY_ONE }) {
             "${record.type.token} outputs depend on the record's content; derive its targets from the stored graph."
         }
+        val nativeRecordIdentifier = (context.options.nativeIdentifierDisclosure as? GovernedSourceIdentifierDisclosurePolicy.Authorized)
+            ?.let { BusinessIdentifier(it.system, record.id) }
+        val sourceRecord = context.event.identityScope.sourceRecord(
+            HealthConnectContract.ADAPTER_ID,
+            record.type.token,
+            context.event.repositoryScope,
+            record.id,
+        )
         return outputs.map { output ->
-            val measurement = requireNotNull(output.measurement)
-            val identifier = context.identityScope.sourceOutput(
-                HealthConnectContract.ADAPTER_ID,
-                record.type.token,
-                context.repositoryScope,
-                record.id,
-                output.outputRole,
-                measurement,
-            )
-            RetractionTarget(identifier, output.resourceType, output.retractionRole)
+            val identifier = sourceRecord.output(output.outputRole, requireNotNull(output.measurement))
+            RetractionTarget(identifier, output.resourceType, output.retractionRole, nativeRecordIdentifier)
         }
     }
 
@@ -89,9 +92,11 @@ public class HealthConnectConverter {
         context: HealthConnectConversionContext,
     ): HealthConnectConversionResult = try {
         val conversion = RecordConversion(record, type, context)
-        when (record) {
-            is BloodGlucoseRecord -> conversion.convertBloodGlucose(record)
-            is NutritionRecord -> conversion.convertNutrition(record)
+        val nodeWithoutResource = conversion.repositoryIdWithoutNode
+        when {
+            nodeWithoutResource != null -> failed(HealthConnectConversionFailure.RepositoryIdWithoutNode(nodeWithoutResource))
+            record is BloodGlucoseRecord -> conversion.convertBloodGlucose(record)
+            record is NutritionRecord -> conversion.convertNutrition(record)
             else -> conversion.convertScalar() ?: conversion.convertSeries() ?: conversion.convertSession()
                 ?: failed(HealthConnectConversionFailure.NotYetConvertible(type))
         }

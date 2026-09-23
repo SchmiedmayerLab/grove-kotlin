@@ -80,7 +80,7 @@ public class RetractionEvent(
             what = Reference().setIdentifier(sourceRecord.toFhir())
         }
         targets
-            .sortedWith(compareBy({ it.identifier.identifier }, { it.resourceType }, { it.role.code }))
+            .sortedWith(compareBy({ it.identifier.identifier }, { it.resourceType.name }, { it.role.code }))
             .forEach { addTarget(it.toReference()) }
     }
 

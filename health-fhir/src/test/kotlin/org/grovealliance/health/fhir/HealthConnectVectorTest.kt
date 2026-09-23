@@ -50,7 +50,7 @@ class HealthConnectVectorTest {
             .isEqualTo(identities.getValue("multi-output-sample").string("value"))
         assertThat(conversion.identifiers.sourceRecord.identifier.value)
             .isEqualTo(identities.getValue("normative-corpus-heart-rate-source-record").string("value"))
-        assertThat(conversion.warnings).contains(HealthConnectConversionWarning.SourceOffsetUnavailable("HeartRateRecord.samples"))
+        assertThat(conversion.warnings).contains(HealthConnectConversionWarning.SourceOffsetUnavailable("Observation.effectiveDateTime"))
 
         val corpus = fixtures.converted(
             HeartRateRecord(
@@ -64,9 +64,15 @@ class HealthConnectVectorTest {
         )
         assertThat(corpus.identifiers.primaryOutput.identifier.value)
             .isEqualTo(identities.getValue("normative-corpus-heart-rate-source-output").string("value"))
-        val artifact = identities.getValue("normative-corpus-heart-rate-source-artifact")
-        val components = artifact.array("components").map { it.jsonPrimitive.content }
-        assertThat(fixtures.scope.mint(OpaqueIdentityKind.SOURCE_ARTIFACT, components).identifier.value).isEqualTo(artifact.string("value"))
+        val sourceRecord = fixtures.scope.sourceRecord(
+            HealthConnectContract.ADAPTER_ID,
+            HealthConnectSourceType.HEART_RATE.token,
+            fixtures.repositoryScope,
+            "record-heart-001",
+        )
+        assertThat(sourceRecord.identifier).isEqualTo(corpus.identifiers.sourceRecord)
+        assertThat(sourceRecord.artifact("heart-rate-samples", 0).identifier.value)
+            .isEqualTo(identities.getValue("normative-corpus-heart-rate-source-artifact").string("value"))
     }
 
     @Test

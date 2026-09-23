@@ -15,11 +15,13 @@ import androidx.health.connect.client.records.metadata.Metadata
 import org.grovealliance.fhir.BusinessIdentifier
 import org.grovealliance.fhir.ExchangeContract
 import org.grovealliance.fhir.ExchangeGraphAssembler
+import org.grovealliance.fhir.ExchangeGraphNode
 import org.grovealliance.fhir.GovernedSourceIdentifierDisclosurePolicy
 import org.grovealliance.fhir.GraphEntry
 import org.grovealliance.fhir.IdentifierSystem
 import org.grovealliance.fhir.InternalGroveFhirApi
 import org.grovealliance.fhir.RoledIdentifier
+import org.grovealliance.fhir.SourceRecordIdentity
 import org.hl7.fhir.r4.model.CodeType
 import org.hl7.fhir.r4.model.CodeableConcept
 import org.hl7.fhir.r4.model.Coding
@@ -50,7 +52,7 @@ internal class RecordConversion(
     private val scope = event.identityScope
     private val warnings = linkedSetOf<HealthConnectConversionWarning>()
     val source: HealthConnectSourceRecord
-    val sourceRecord: RoledIdentifier
+    val sourceRecord: SourceRecordIdentity
     private val writerIdentity: RoledIdentifier?
     private val assembler: ExchangeGraphAssembler
 
@@ -68,6 +70,10 @@ internal class RecordConversion(
         assembler = ExchangeGraphAssembler(event, HealthConnectContract.ADAPTER_ID, metadata.device?.let(::resolveRecorder))
     }
 
+    /** The node a repository id names that this record's graph does not carry, or null when every id has its node. */
+    val repositoryIdWithoutNode: ExchangeGraphNode?
+        get() = ExchangeGraphNode.RECORDING_DEVICE.takeIf { it in event.repositoryIds && assembler.recordingDeviceEntry == null }
+
     fun warn(warning: HealthConnectConversionWarning) {
         warnings += warning
     }
@@ -75,14 +81,7 @@ internal class RecordConversion(
     /** The exactly-one output of this source type, whose discriminator is its measurement id. */
     fun singleOutput(measurement: String): RoledIdentifier = output(SINGLE_ROLE, measurement)
 
-    fun output(role: String, discriminator: String): RoledIdentifier = scope.sourceOutput(
-        adapterId = HealthConnectContract.ADAPTER_ID,
-        sourceType = type.token,
-        repositoryScope = event.repositoryScope,
-        nativeRecordId = metadata.id,
-        outputRole = role,
-        outputDiscriminator = discriminator,
-    )
+    fun output(role: String, discriminator: String): RoledIdentifier = sourceRecord.output(role, discriminator)
 
     fun spec(measurement: String): MeasurementSpec = HealthConnectMeasurements.spec(measurement)
 
@@ -99,7 +98,7 @@ internal class RecordConversion(
         val observation = Observation().apply {
             meta.addProfile(spec.profile)
             if (!spec.adapterSpecific) meta.addProfile(HealthConnectContract.HEALTH_CONNECT_OBSERVATION_PROFILE)
-            addIdentifier(sourceRecord.toFhir())
+            addIdentifier(sourceRecord.identifier.toFhir())
             addIdentifier(output.toFhir())
             if (disclosesNativeIdentifier) nativeIdentifier()?.let(::addIdentifier)
             writerIdentity?.let { writer ->
@@ -125,11 +124,11 @@ internal class RecordConversion(
         children: List<GraphEntry> = emptyList(),
         companions: List<GraphEntry> = emptyList(),
     ): HealthConnectConversionResult {
-        val outputs = listOfNotNull(primary) + children + companions
         if (primary == null) return HealthConnectConversionResult.NoOutput(source, warnings.toList())
+        val outputs = listOf(assembler.primaryOutput(primary)) + children + companions
         val provenance = assembler.conversionProvenance(
             HealthConnectContract.HEALTH_CONNECT_PROVENANCE_PROFILE,
-            sourceRecord,
+            sourceRecord.identifier,
             outputs,
             sourceActivityTime(outputs),
         )
@@ -143,14 +142,14 @@ internal class RecordConversion(
             }
         }
         val graph = assembler.activeGraph(outputs, provenance)
-        val identifiers = assembler.identifiers(sourceRecord, primary.identifier, children.map { it.identifier })
+        val identifiers = assembler.identifiers(sourceRecord.identifier, primary.identifier, children.map { it.identifier })
         return HealthConnectConversionResult.Converted(HealthConnectConversion(source, identifiers, graph, warnings.toList()))
     }
 
     private fun resolveRecorder(device: Device) = context.options.recordingDevice.resolve(device).also { resolved ->
         if (resolved == null) {
-            val name = listOfNotNull(device.manufacturer, device.model).joinToString(" ").ifBlank { UNNAMED_DEVICE }
-            warn(HealthConnectConversionWarning.RecordingDeviceOmitted(name))
+            val name = listOfNotNull(device.manufacturer, device.model).filter(String::isNotBlank).joinToString(" ")
+            warn(HealthConnectConversionWarning.RecordingDeviceOmitted(name.ifEmpty { null }))
         }
     }
 
@@ -162,7 +161,6 @@ internal class RecordConversion(
         const val SINGLE_ROLE = "single"
         const val ENTERER = "enterer"
         const val DEVICE = "Device"
-        const val UNNAMED_DEVICE = "Device"
     }
 }
 

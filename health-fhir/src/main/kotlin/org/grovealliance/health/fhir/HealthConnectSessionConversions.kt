@@ -89,7 +89,7 @@ private fun RecordConversion.convertSleep(record: SleepSessionRecord): HealthCon
 
 private fun RecordConversion.convertExercise(record: ExerciseSessionRecord): HealthConnectConversionResult {
     withheldExerciseFields(record).takeIf { it.isNotEmpty() }?.let {
-        warn(HealthConnectConversionWarning.UnmodeledMetadataWithheld(it))
+        warn(HealthConnectConversionWarning.UnmodeledMetadataWithheld(it.sorted()))
     }
     val summarySpec = spec("workout")
     val activity = HealthConnectWorkoutVocabulary.activity(record.exerciseType)

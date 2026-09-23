@@ -23,10 +23,10 @@ internal class HealthConnectProjectionRefusalException(val refusal: HealthConnec
 
 internal fun refuseProjection(refusal: HealthConnectProjectionRefusal): Nothing = throw HealthConnectProjectionRefusalException(refusal)
 
-internal fun Observation.sourceRecordIdentity(): RoledIdentifier? =
+internal fun Observation.sourceRecordIdentifier(): RoledIdentifier? =
     identifier.mapNotNull(RoledIdentifier::from).firstOrNull { it.role == GroveIdentifierRole.SOURCE_RECORD }
 
-internal fun Observation.sourceOutputIdentity(): RoledIdentifier? =
+internal fun Observation.sourceOutputIdentifier(): RoledIdentifier? =
     identifier.mapNotNull(RoledIdentifier::from).firstOrNull { it.role == GroveIdentifierRole.SOURCE_OUTPUT }
 
 /** The Health Connect record-type token, or a refusal when the Observation is not an adapter output. */
@@ -39,7 +39,7 @@ internal fun Observation.measurementId(): String? =
 
 /** The metadata the projected record carries: recording method, writer identity and no device. */
 internal fun Observation.projectedMetadata(clientRecordId: String?): Metadata {
-    val id = clientRecordId ?: sourceOutputIdentity()?.identifier?.value
+    val id = clientRecordId ?: sourceOutputIdentifier()?.identifier?.value
         ?: refuseProjection(HealthConnectProjectionRefusal.MissingElement("Observation.identifier"))
     val version = getExtensionByUrl(ExchangeContract.WRITER_RECORD_VERSION_EXTENSION)?.value?.primitiveValue()?.toLongOrNull() ?: 0L
     val method = (getExtensionByUrl(HealthConnectContract.RECORDING_METHOD_EXTENSION)?.value as? Coding)?.code

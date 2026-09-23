@@ -24,13 +24,13 @@ import org.grovealliance.fhir.StudyEnrollment
 import org.grovealliance.fhir.Subject
 import java.time.Instant
 
-/** Explicit deployment policy for the user-authored Health Connect title and notes fields. */
+/** Whether the user-authored Health Connect session title and notes leave the device. */
 public enum class UserAuthoredTextPolicy {
+    /** The default: omit both as a data-minimization decision; the omission is chosen and never warns. */
+    OMIT,
+
     /** Keep nonblank titles in the session-title extension and notes in `Observation.note.text`. */
     RETAIN,
-
-    /** Omit both as a data-minimization decision; the omission is chosen and never warns. */
-    OMIT,
 }
 
 /**
@@ -48,9 +48,9 @@ public fun interface RecordingDeviceResolver {
     }
 }
 
-/** The adapter-specific choices one deployment makes for every Health Connect conversion. */
+/** The adapter-specific choices one deployment makes for every Health Connect conversion; every disclosure defaults to omission. */
 public data class HealthConnectConversionOptions(
-    public val userAuthoredText: UserAuthoredTextPolicy,
+    public val userAuthoredText: UserAuthoredTextPolicy = UserAuthoredTextPolicy.OMIT,
     public val recordingDevice: RecordingDeviceResolver = RecordingDeviceResolver.None,
     public val routeDisclosure: RouteDisclosurePolicy = RouteDisclosurePolicy.OMIT,
     public val nativeIdentifierDisclosure: GovernedSourceIdentifierDisclosurePolicy =
@@ -59,18 +59,23 @@ public data class HealthConnectConversionOptions(
     override fun toString(): String =
         "HealthConnectConversionOptions(userAuthoredText=$userAuthoredText, routeDisclosure=$routeDisclosure, " +
             "nativeIdentifierDisclosure=$nativeIdentifierDisclosure)"
+
+    public companion object {
+        /** Every policy omits and no recording device is resolved. */
+        public val Default: HealthConnectConversionOptions = HealthConnectConversionOptions()
+    }
 }
 
 /**
  * Everything one Health Connect conversion needs: the shared event context and the adapter options.
  *
  * The component constructor reads the host this process runs on and takes the conversion instant as
- * now, so a caller supplies only the subject, the event, the scope, the repository scope, the
- * application and its options.
+ * now, so a caller supplies only the subject, the event, the scope, the repository scope and the
+ * application.
  */
 public data class HealthConnectConversionContext(
     public val event: ExchangeEventContext,
-    public val options: HealthConnectConversionOptions,
+    public val options: HealthConnectConversionOptions = HealthConnectConversionOptions.Default,
 ) {
     public constructor(
         subject: Subject,
@@ -78,7 +83,7 @@ public data class HealthConnectConversionContext(
         identityScope: OpaqueIdentityScope,
         repositoryScope: BusinessIdentifier,
         application: ApplicationDevice,
-        options: HealthConnectConversionOptions,
+        options: HealthConnectConversionOptions = HealthConnectConversionOptions.Default,
         host: HostDevice = HostDevice.current(),
         conversionInstant: Instant = Instant.now(),
         converterRole: ConverterRole = ConverterRole.Assembler,
@@ -107,7 +112,14 @@ public data class HealthConnectConversionContext(
                 "A native identifier system requires its own repository namespace, never a Grove identity system."
             }
         }
+        val uncarried = event.repositoryIds.keys intersect NODES_NEVER_CARRIED
+        require(uncarried.isEmpty()) { "A Health Connect graph has no $uncarried node to assign a repository id to." }
     }
 
     override fun toString(): String = "HealthConnectConversionContext(event=$event, options=$options)"
+
+    private companion object {
+        /** The writer is named by package alone and no Health Connect record yields a source artifact. */
+        val NODES_NEVER_CARRIED = setOf(ExchangeGraphNode.WRITER, ExchangeGraphNode.WRITER_HOST, ExchangeGraphNode.SOURCE_ARTIFACT)
+    }
 }

@@ -8,7 +8,7 @@
 package org.grovealliance.fhir
 
 /** One registered producer diagnostic: the stable rule code, its registry reason, where it applies and how severe it is. */
-public data class ExchangeGraphDiagnostic(
+public data class ProducerDiagnostic(
     public val code: String,
     public val reason: String,
     public val location: String,
@@ -24,13 +24,13 @@ public data class ExchangeGraphDiagnostic(
 }
 
 /** The diagnostic a registered rule reports at one location, with its registry reason and severity. */
-public fun ExchangeGraphRule.at(location: String): ExchangeGraphDiagnostic =
-    ExchangeGraphDiagnostic(code = code, reason = reason, location = location, severity = severity)
+public fun ExchangeGraphRule.at(location: String): ProducerDiagnostic =
+    ProducerDiagnostic(code = code, reason = reason, location = location, severity = severity)
 
 /** Why a Bundle is not a valid exchange graph. */
 public sealed interface ExchangeGraphError {
     /** The registry diagnostic this error reports. */
-    public val diagnostic: ExchangeGraphDiagnostic
+    public val diagnostic: ProducerDiagnostic
 
     /** One registered rule failed at one location; [detail] never carries a source value. */
     public data class RuleViolation(
@@ -38,7 +38,7 @@ public sealed interface ExchangeGraphError {
         public val location: String,
         public val detail: String,
     ) : ExchangeGraphError {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = rule.at(location)
 
         override fun toString(): String = "RuleViolation(${rule.code} at $location: $detail)"
@@ -46,7 +46,7 @@ public sealed interface ExchangeGraphError {
 
     /** The bytes are not a FHIR R4 Bundle at all. */
     public data class Malformed(public val detail: String) : ExchangeGraphError {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_EXCHANGE_UNCLASSIFIED.at("Bundle")
 
         override fun toString(): String = "Malformed($detail)"

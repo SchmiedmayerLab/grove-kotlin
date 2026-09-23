@@ -48,17 +48,21 @@ internal fun Long.at(field: String): SourceValue = SourceValue(toDouble(), field
 
 internal fun Map<Int, String>.token(value: SourceEnum): String = token(value.value, value.field)
 
-internal fun RecordConversion.dateTime(moment: SourceMoment, field: String): DateTimeType {
-    if (moment.offset == null) warn(HealthConnectConversionWarning.SourceOffsetUnavailable(field))
-    return DateTimeType(HealthConnectTime.fhirDateTime(moment.time, moment.offset, field))
-}
+internal fun RecordConversion.dateTime(moment: SourceMoment, field: String): DateTimeType =
+    effective(moment, field, "Observation.effectiveDateTime")
 
 internal fun RecordConversion.period(interval: SourceInterval, field: String): Period {
     if (!interval.start.time.isBefore(interval.end.time)) refuse(HealthConnectValueFailure.EffectivePeriodInvalid(field))
     return Period().apply {
-        startElement = dateTime(interval.start, "$field.start")
-        endElement = dateTime(interval.end, "$field.end")
+        startElement = effective(interval.start, "$field.start", "Observation.effectivePeriod.start")
+        endElement = effective(interval.end, "$field.end", "Observation.effectivePeriod.end")
     }
+}
+
+/** The effective [element] of one source moment; the warning names the element, a refusal the source [field]. */
+private fun RecordConversion.effective(moment: SourceMoment, field: String, element: String): DateTimeType {
+    if (moment.offset == null) warn(HealthConnectConversionWarning.SourceOffsetUnavailable(element))
+    return DateTimeType(HealthConnectTime.fhirDateTime(moment.time, moment.offset, field))
 }
 
 internal fun quantity(spec: QuantitySpec, value: BigDecimal): Quantity =

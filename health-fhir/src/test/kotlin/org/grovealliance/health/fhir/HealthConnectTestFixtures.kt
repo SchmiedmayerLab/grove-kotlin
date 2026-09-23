@@ -27,9 +27,11 @@ import org.grovealliance.fhir.ConverterRole
 import org.grovealliance.fhir.DeploymentIdentifierSystems
 import org.grovealliance.fhir.EventSequence
 import org.grovealliance.fhir.ExchangeEventIdentifier
+import org.grovealliance.fhir.ExchangeGraphNode
 import org.grovealliance.fhir.HostDevice
 import org.grovealliance.fhir.IdentifierSystem
 import org.grovealliance.fhir.OpaqueIdentityScope
+import org.grovealliance.fhir.RepositoryId
 import org.grovealliance.fhir.StudyEnrollment
 import org.grovealliance.fhir.Subject
 import java.io.File
@@ -75,6 +77,9 @@ internal object HealthConnectTestFixtures {
     val host = HostDevice(operatingSystemVersion = "16", manufacturer = "Example", modelNumber = "Phone One")
     val watch = Device(manufacturer = "Example Device Company", model = "Study Watch", type = Device.TYPE_WATCH)
     val conversionInstant: Instant = Instant.parse("2026-08-19T18:00:00Z")
+
+    // The fixture deployment retains user-authored text so the exported corpus carries every element.
+    val options = HealthConnectConversionOptions(userAuthoredText = UserAuthoredTextPolicy.RETAIN)
     val lastModified: Instant = Instant.parse("2026-08-19T17:30:01Z")
     val converter = HealthConnectConverter()
 
@@ -84,11 +89,12 @@ internal object HealthConnectTestFixtures {
     fun context(
         sequence: Long = 1,
         conversionInstant: Instant = this.conversionInstant,
-        options: HealthConnectConversionOptions = HealthConnectConversionOptions(UserAuthoredTextPolicy.RETAIN),
+        options: HealthConnectConversionOptions = this.options,
         subject: Subject = this.subject,
         converterRole: ConverterRole = ConverterRole.Assembler,
         studies: List<StudyEnrollment> = emptyList(),
         scope: OpaqueIdentityScope = this.scope,
+        repositoryIds: Map<ExchangeGraphNode, RepositoryId> = emptyMap(),
     ): HealthConnectConversionContext = HealthConnectConversionContext(
         subject = subject,
         event = event(sequence, scope),
@@ -100,6 +106,7 @@ internal object HealthConnectTestFixtures {
         conversionInstant = conversionInstant,
         converterRole = converterRole,
         studies = studies,
+        repositoryIds = repositoryIds,
     )
 
     fun metadata(id: String, lastModified: Instant = this.lastModified, base: Metadata = Metadata.autoRecorded(watch)): Metadata =

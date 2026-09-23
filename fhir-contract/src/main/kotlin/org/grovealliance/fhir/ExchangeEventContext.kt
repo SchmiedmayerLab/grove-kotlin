@@ -65,8 +65,8 @@ public data class ExchangeGraphIdentifiers(
     public val childOutputs: List<RoledIdentifier>,
     public val sourceArtifact: RoledIdentifier?,
     public val recordingDeviceSnapshot: RoledIdentifier?,
-    public val sourceAuthorSnapshot: RoledIdentifier?,
-    public val sourceAuthorHostSnapshot: RoledIdentifier?,
+    public val writerSnapshot: RoledIdentifier?,
+    public val writerHostSnapshot: RoledIdentifier?,
 ) {
     /** Every output identity in Bundle order: the primary first, then its children. */
     public val outputs: List<RoledIdentifier>

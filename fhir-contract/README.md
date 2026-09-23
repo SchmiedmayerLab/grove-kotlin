@@ -26,6 +26,7 @@ Every rule is a registered producer diagnostic of the grove-fhir catalog, genera
 
 `DeploymentIdentifierSystems.derived` names the twelve identifier systems of one deployment root, key id and epoch.
 `OpaqueIdentityScope` mints every opaque identity under them with one HMAC-SHA-256 key; the published conformance key is admitted only through `forConformanceTesting`.
+`sourceRecord` and `providerRecord` return a `SourceRecordIdentity` or `ProviderRecordIdentity`, whose `output` and `artifact` extend the record's components to each output and recording part, as the catalog's identity kinds do.
 `ExchangeEventIdentifier` and `EntryNodeKey` are the clear event and entry-node identities, and `BusinessIdentifier` with `RoledIdentifier` carry any of them into FHIR.
 
 ### Context
@@ -41,15 +42,16 @@ It is internal API for adapters and requires `InternalGroveFhirApi`.
 
 ```kotlin
 val assembler = ExchangeGraphAssembler(context, adapterId = "questionnaire", recordingDevice = null)
-val output = GraphEntry(outputIdentity, observation.also(assembler::decorate))
-val provenance = assembler.conversionProvenance(profile, sourceRecord, listOf(output), occurred)
+val sourceRecord = context.identityScope.sourceRecord("questionnaire", "QuestionnaireResponse", context.repositoryScope, responseId)
+val output = GraphEntry(sourceRecord.output(role = "body-weight", discriminator = "single"), observation.also(assembler::decorate))
+val provenance = assembler.conversionProvenance(profile, sourceRecord.identifier, listOf(output), occurred)
 val graph = assembler.activeGraph(listOf(output), provenance)
 ```
 
 ### Verification
 
 `ExchangeGraph.parse` validates any Bundle against the registered rules and returns `Valid` with the graph or `Invalid` with exactly one diagnostic.
-`semanticallyEquals` compares two graphs the way the receiver-lifecycle corpus does, and `retractionTargets` derives the targets a `RetractionEvent` must name.
+`semanticallyEquals` compares two graphs the way the receiver-lifecycle corpus does, and `retractionTargets` derives the targets a `RetractionEvent` must name, each with its typed resource type and, when disclosed, the native record identifier.
 
 ```kotlin
 when (val result = ExchangeGraph.parse(ExchangeGraphKind.ACTIVE, json)) {
@@ -69,14 +71,15 @@ The tests run the normative vectors on their own and the mobile-exchange and rec
 | Business identifier | `BusinessIdentifier` |
 | Identifier role | `GroveIdentifierRole` on a `RoledIdentifier` |
 | Opaque identity | `OpaqueIdentityScope` minting `OpaqueIdentityKind` under `DeploymentIdentifierSystems` |
+| Source-record identity | `SourceRecordIdentity`, or `ProviderRecordIdentity` for a provider record, extending to its `output` and `artifact` identities |
 | Entry-node key | `EntryNodeKey` |
 | Subject | `Subject.Logical` or `Subject.Bundled` |
 | Study enrollment | `StudyEnrollment` |
 | Application, host and recording device | `ApplicationDevice`, `HostDevice`, `RecordingDevice` |
-| Writer | The writer-record identity minted by `OpaqueIdentityScope.writerRecord` |
+| Writer | The writer-record identity minted by `OpaqueIdentityScope.writerRecord`, and `ExchangeGraphNode.WRITER` and `WRITER_HOST` for its own Device snapshots |
 | Retraction event and target | `RetractionEvent`, `RetractionTarget`, `RetractionTargetRole` |
 | Governed source identifier | `GovernedSourceIdentifierDisclosurePolicy` |
-| Producer diagnostic | `ExchangeGraphRule` and `ExchangeGraphDiagnostic` |
+| Producer diagnostic | `ExchangeGraphRule` and `ProducerDiagnostic` |
 
 # Package org.grovealliance.fhir
 

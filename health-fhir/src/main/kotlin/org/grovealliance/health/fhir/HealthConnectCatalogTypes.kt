@@ -11,6 +11,7 @@ import org.grovealliance.fhir.QuantityValueDomain
 import org.grovealliance.fhir.RetractionTargetRole
 import org.hl7.fhir.r4.model.CodeableConcept
 import org.hl7.fhir.r4.model.Coding
+import org.hl7.fhir.r4.model.ResourceType
 
 /** One adapter catalog row: how the catalog classifies a Record class and what it emits for it. */
 public data class HealthConnectCatalogEntry(
@@ -24,7 +25,7 @@ public data class HealthConnectCatalogEntry(
 /** One output the catalog admits for a source type, with its count rule and retraction role. */
 public data class HealthConnectOutput(
     public val measurement: String?,
-    public val resourceType: String,
+    public val resourceType: ResourceType,
     public val countRule: HealthConnectOutputCountRule,
     public val outputRole: String,
     public val retractionRole: RetractionTargetRole,

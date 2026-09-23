@@ -12,7 +12,12 @@ import android.os.Build
 import org.grovealliance.fhir.ApplicationDevice
 import org.grovealliance.fhir.HostDevice
 
-/** The host facts of the device this process runs on, read from [Build]. */
+/**
+ * The host facts of the device this process runs on, read from [Build].
+ *
+ * Its `sourceDeviceToken` is `Build.MANUFACTURER|Build.MODEL|Build.VERSION.RELEASE`;
+ * `Build.DEVICE` becomes the display name and is not part of it.
+ */
 public fun HostDevice.Companion.current(): HostDevice = HostDevice(
     operatingSystemVersion = Build.VERSION.RELEASE,
     name = Build.DEVICE,

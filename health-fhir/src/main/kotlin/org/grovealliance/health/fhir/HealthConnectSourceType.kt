@@ -13,6 +13,7 @@ package org.grovealliance.health.fhir
 
 import androidx.health.connect.client.records.Record
 import org.grovealliance.fhir.RetractionTargetRole
+import org.hl7.fhir.r4.model.ResourceType
 import kotlin.reflect.KClass
 
 /** How the adapter catalog classifies one AndroidX Record class. */
@@ -286,7 +287,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "active-energy",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -303,7 +304,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "basal-body-temperature",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -320,7 +321,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "basal-metabolic-rate",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -337,7 +338,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "blood-glucose",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -346,7 +347,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = null,
-                resourceType = "Specimen",
+                resourceType = ResourceType.Specimen,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "specimen",
                 retractionRole = RetractionTargetRole.SPECIMEN,
@@ -355,7 +356,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "capillary-blood-glucose",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -364,7 +365,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "serum-plasma-glucose",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -373,7 +374,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "interstitial-glucose",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -390,7 +391,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "blood-pressure",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -407,7 +408,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "body-fat-percentage",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -424,7 +425,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "body-temperature",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -441,7 +442,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "body-water-mass",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -458,7 +459,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "bone-mass",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -475,7 +476,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "cervical-mucus-quality",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -492,7 +493,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "cycling-cadence",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_SAMPLE,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -509,7 +510,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "distance",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -526,7 +527,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "elevation-gained",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -543,7 +544,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "workout",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -552,7 +553,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "workout-segment",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "workout-segment",
                 retractionRole = RetractionTargetRole.CHILD_OUTPUT,
@@ -569,7 +570,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "flights-climbed",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -586,7 +587,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "heart-rate",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_SAMPLE,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -603,7 +604,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "heart-rate-variability-rmssd",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -620,7 +621,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "body-height",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -637,7 +638,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "fluid-intake",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -654,7 +655,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "intermenstrual-bleeding",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -671,7 +672,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "lean-body-mass",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -688,7 +689,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "menstruation-flow",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -705,7 +706,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "menstruation-period",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -722,7 +723,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "mindfulness-session",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -739,7 +740,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "dietary-biotin",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -748,7 +749,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-caffeine",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -757,7 +758,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-calcium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -766,7 +767,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-carbohydrates",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -775,7 +776,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-chloride",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -784,7 +785,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-cholesterol",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -793,7 +794,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-chromium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -802,7 +803,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-copper",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -811,7 +812,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-energy",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -820,7 +821,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-energy-from-fat",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -829,7 +830,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-monounsaturated",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -838,7 +839,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-polyunsaturated",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -847,7 +848,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-saturated",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -856,7 +857,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-total",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -865,7 +866,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-trans",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -874,7 +875,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fat-unsaturated",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -883,7 +884,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-fiber",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -892,7 +893,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-folate",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -901,7 +902,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-folic-acid",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -910,7 +911,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-iodine",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -919,7 +920,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-iron",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -928,7 +929,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-magnesium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -937,7 +938,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-manganese",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -946,7 +947,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-molybdenum",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -955,7 +956,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-niacin",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -964,7 +965,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-pantothenic-acid",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -973,7 +974,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-phosphorus",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -982,7 +983,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-potassium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -991,7 +992,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-protein",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1000,7 +1001,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-riboflavin",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1009,7 +1010,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-selenium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1018,7 +1019,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-sodium",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1027,7 +1028,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-sugar",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1036,7 +1037,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-thiamin",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1045,7 +1046,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-a",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1054,7 +1055,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-b12",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1063,7 +1064,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-b6",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1072,7 +1073,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-c",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1081,7 +1082,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-d",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1090,7 +1091,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-e",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1099,7 +1100,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-vitamin-k",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1108,7 +1109,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "dietary-zinc",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_PRESENT_FIELD,
                 outputRole = "present-field",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1125,7 +1126,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "ovulation-test-result",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1142,7 +1143,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "oxygen-saturation",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1168,7 +1169,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "power",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_SAMPLE,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1185,7 +1186,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "respiratory-rate",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1202,7 +1203,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "resting-heart-rate",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1219,7 +1220,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "sexual-activity",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1236,7 +1237,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "skin-temperature",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.GRAPH_SPECIFIC,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1253,7 +1254,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "sleep-duration",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1262,7 +1263,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
             ),
             HealthConnectOutput(
                 measurement = "sleep-stage",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_STAGE,
                 outputRole = "sleep-stage",
                 retractionRole = RetractionTargetRole.CHILD_OUTPUT,
@@ -1279,7 +1280,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "speed",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_SAMPLE,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1296,7 +1297,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "step-cadence",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.ONE_PER_SAMPLE,
                 outputRole = "sample",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1313,7 +1314,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "step-count",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1330,7 +1331,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "total-energy",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1347,7 +1348,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "vo2-max",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1364,7 +1365,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "body-weight",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,
@@ -1381,7 +1382,7 @@ private val CATALOG_ENTRIES: List<HealthConnectCatalogEntry> = listOf(
         outputs = listOf(
             HealthConnectOutput(
                 measurement = "wheelchair-push-count",
-                resourceType = "Observation",
+                resourceType = ResourceType.Observation,
                 countRule = HealthConnectOutputCountRule.EXACTLY_ONE,
                 outputRole = "single",
                 retractionRole = RetractionTargetRole.PRIMARY_OUTPUT,

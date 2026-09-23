@@ -11,8 +11,8 @@ import androidx.health.connect.client.records.Record
 import org.grovealliance.fhir.BusinessIdentifier
 import org.grovealliance.fhir.ConversionBatch
 import org.grovealliance.fhir.ExchangeGraph
-import org.grovealliance.fhir.ExchangeGraphDiagnostic
 import org.grovealliance.fhir.ExchangeGraphRule
+import org.grovealliance.fhir.ProducerDiagnostic
 import org.grovealliance.fhir.at
 import org.hl7.fhir.r4.model.Observation
 import org.hl7.fhir.r4.model.Specimen
@@ -20,41 +20,41 @@ import org.hl7.fhir.r4.model.Specimen
 /** Why an Observation could not be read back as a Health Connect record; each refusal carries a registry diagnostic. */
 public sealed interface HealthConnectProjectionRefusal {
     /** The registry diagnostic this refusal reports. */
-    public val diagnostic: ExchangeGraphDiagnostic
+    public val diagnostic: ProducerDiagnostic
 
     /** The Observation carries no Health Connect record-type lineage. */
     public data class NotHealthConnectOutput(public val location: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE.at(location)
     }
 
     /** The record-type token has no projection back to an AndroidX record. */
     public data class UnsupportedSourceType(public val token: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE.at(token)
     }
 
     /** A member output cannot stand alone as a record; project its whole graph instead. */
     public data class ChildOutput(public val measurement: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_REQUIRED_COMPONENT_MISSING.at(measurement)
     }
 
     /** An element the record requires is absent. */
     public data class MissingElement(public val path: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_REQUIRED_METADATA_MISSING.at(path)
     }
 
     /** A Quantity does not carry the catalog-fixed system and code. */
     public data class UnitMismatch(public val path: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_VALUE_SHAPE_INVALID.at(path)
     }
 
     /** A coding is outside the published source vocabulary. */
     public data class UnsupportedCode(public val path: String) : HealthConnectProjectionRefusal {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_VALUE.at(path)
     }
 }
@@ -91,7 +91,7 @@ public fun ExchangeGraph.toHealthConnectRecords(): ConversionBatch<Record, Healt
     val groups = linkedMapOf<String?, MutableList<Observation>>()
     resources.filterIsInstance<Observation>()
         .filter { it.hasExtension(HealthConnectContract.HEALTH_CONNECT_RECORD_TYPE_EXTENSION) }
-        .forEach { groups.getOrPut(it.sourceRecordIdentity()?.identifier?.value) { mutableListOf() }.add(it) }
+        .forEach { groups.getOrPut(it.sourceRecordIdentifier()?.identifier?.value) { mutableListOf() }.add(it) }
     val specimens = resources.filterIsInstance<Specimen>()
     val records = mutableListOf<Record>()
     val failures = mutableListOf<HealthConnectProjectionFailure>()
@@ -100,7 +100,7 @@ public fun ExchangeGraph.toHealthConnectRecords(): ConversionBatch<Record, Healt
         try {
             records += HealthConnectProjection.project(observations, companions, null)
         } catch (refusal: HealthConnectProjectionRefusalException) {
-            failures += HealthConnectProjectionFailure(observations.first().sourceRecordIdentity()?.identifier, refusal.refusal)
+            failures += HealthConnectProjectionFailure(observations.first().sourceRecordIdentifier()?.identifier, refusal.refusal)
         }
     }
     return ConversionBatch(records, failures)

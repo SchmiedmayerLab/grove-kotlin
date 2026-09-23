@@ -33,11 +33,13 @@ class ExchangeProtocolVectorsTest {
     }
 
     @Test
-    fun `closed identity kinds and arities exactly match the configured normative catalog`() {
+    fun `closed identity kinds arities and component forms exactly match the configured normative catalog`() {
         val catalog = ConformanceFixtures.configuredDirectory(ConformanceFixtures.CATALOG_PROPERTY)
         assumeTrue("The ${ConformanceFixtures.CATALOG_PROPERTY} lane is not configured.", catalog != null)
-        val kinds = Json.parseToJsonElement(requireNotNull(catalog).readText()).jsonObject
-            .objectValue("opaqueIdentity").array("identityKinds")
+        val opaque = Json.parseToJsonElement(requireNotNull(catalog).readText()).jsonObject.objectValue("opaqueIdentity")
+        val unsignedDecimal = opaque.objectValue("componentRequirements").array("unsignedDecimal")
+            .map { it.jsonPrimitive.content }
+        val kinds = opaque.array("identityKinds")
             .associate { element ->
                 val kind = element.jsonObject
                 kind.string("kind") to Pair(
@@ -48,6 +50,7 @@ class ExchangeProtocolVectorsTest {
 
         assertThat(OpaqueIdentityKind.entries.associate { it.code to (it.identifierRole.code to it.components) })
             .isEqualTo(kinds)
+        assertThat(ExchangeContract.unsignedDecimalComponents).containsExactlyElementsIn(unsignedDecimal)
     }
 
     @Test
@@ -92,6 +95,64 @@ class ExchangeProtocolVectorsTest {
     }
 
     @Test
+    fun `record identities mint every record output and artifact vector`() {
+        val recordKinds = setOf(
+            OpaqueIdentityKind.SOURCE_RECORD,
+            OpaqueIdentityKind.SOURCE_OUTPUT,
+            OpaqueIdentityKind.SOURCE_ARTIFACT,
+            OpaqueIdentityKind.PROVIDER_RECORD,
+            OpaqueIdentityKind.PROVIDER_OUTPUT,
+            OpaqueIdentityKind.PROVIDER_ARTIFACT,
+        )
+        val extending = vectors.array("identities").map { it.jsonObject }
+            .filter { OpaqueIdentityKind.of(it.string("identityKind")) in recordKinds }
+        assertThat(extending.mapNotNull { OpaqueIdentityKind.of(it.string("identityKind")) }.toSet()).isEqualTo(recordKinds)
+        extending.forEach { vector ->
+            val kind = requireNotNull(OpaqueIdentityKind.of(vector.string("identityKind")))
+            val components = vector.array("components").map { it.jsonPrimitive.content }
+            val minted = recordFirst(kind, components)
+            assertThat(minted.identifier.value).isEqualTo(vector.string("value"))
+            assertThat(minted).isEqualTo(scope.mint(kind, components))
+        }
+    }
+
+    @Test
+    fun `record identities print neither the key nor the native record id`() {
+        val repository = BusinessIdentifier(IdentifierSystem("https://accounts.example.org"), "patient")
+        val source = scope.sourceRecord("health-connect", "StepsRecord", repository, "native-record-7")
+        val provider = scope.providerRecord("withings", "measure", repository, "native-record-7")
+
+        assertThat(source.toString()).isEqualTo("SourceRecordIdentity(identifier=${source.identifier})")
+        assertThat(provider.toString()).isEqualTo("ProviderRecordIdentity(identifier=${provider.identifier})")
+        assertThat(source.toString() + provider.toString()).doesNotContain("native-record-7")
+    }
+
+    @Test
+    fun `record identities refuse a negative artifact part index`() {
+        val repository = BusinessIdentifier(IdentifierSystem("https://accounts.example.org"), "patient")
+        val source = scope.sourceRecord("health-connect", "StepsRecord", repository, "native-record-7")
+        val provider = scope.providerRecord("withings", "measure", repository, "native-record-7")
+
+        val sourceError = assertThrows(ExchangeIdentityException::class.java) { source.artifact("csv", -1) }.error
+        val providerError = assertThrows(ExchangeIdentityException::class.java) { provider.artifact("csv", -1) }.error
+        assertThat(sourceError).isEqualTo(ExchangeIdentityError.NonCanonicalPartIndex("source-artifact.part-index"))
+        assertThat(providerError).isEqualTo(ExchangeIdentityError.NonCanonicalPartIndex("provider-artifact.part-index"))
+        assertThat(source.artifact("csv", 0).identifier.value).startsWith("v0:")
+    }
+
+    @Test
+    fun `component errors report their registered rules`() {
+        val path = "source-artifact.part-index"
+        val rules = mapOf(
+            ExchangeIdentityError.NonScalarText(path) to ExchangeGraphRule.MOBILE_INPUT_TEXT_NOT_UNICODE_SCALAR,
+            ExchangeIdentityError.EmptyComponent(path) to ExchangeGraphRule.MOBILE_INPUT_REQUIRED_METADATA_MISSING,
+            ExchangeIdentityError.NonCanonicalPartIndex(path) to ExchangeGraphRule.MOBILE_INPUT_UNCLASSIFIED,
+        )
+
+        rules.forEach { (error, rule) -> assertThat(error.diagnostic).isEqualTo(rule.at(path)) }
+    }
+
+    @Test
     fun `rejects every vendored invalid opaque identity vector`() {
         val invalid = vectors.array("invalidIdentities")
         assertThat(invalid).isNotEmpty()
@@ -99,20 +160,22 @@ class ExchangeProtocolVectorsTest {
             val vector = element.jsonObject
             val kind = requireNotNull(OpaqueIdentityKind.of(vector.string("identityKind")))
             val components = vector.array("components").map { it.jsonPrimitive.content }
-            assertThrows(vector.string("id"), IllegalArgumentException::class.java) { scope.mint(kind, components) }
+            val thrown = assertThrows(vector.string("id"), IllegalArgumentException::class.java) { scope.mint(kind, components) }
+            val error = (thrown as? ExchangeIdentityException)?.error
+            when (val expected = vector.string("expectedError")) {
+                "empty-component" -> assertThat(error).isInstanceOf(ExchangeIdentityError.EmptyComponent::class.java)
+                "non-canonical-part-index" ->
+                    assertThat(error).isEqualTo(ExchangeIdentityError.NonCanonicalPartIndex("${kind.code}.part-index"))
+                "provider-kind-required" -> assertThat(error).isNull()
+                else -> throw AssertionError("${vector.string("id")} expects the unknown error $expected")
+            }
         }
     }
 
     @Test
     fun `every closed kind rejects missing excess empty and non-scalar components`() {
         OpaqueIdentityKind.entries.forEach { kind ->
-            val exact = List(kind.componentCount) { index ->
-                when {
-                    index != 0 -> "component-$index"
-                    kind.code.startsWith("provider-") -> "withings"
-                    else -> "health-connect"
-                }
-            }
+            val exact = components(kind, if (kind.code.startsWith("provider-")) "withings" else "health-connect")
             assertThat(scope.mint(kind, exact).identifier.value).matches("v0:test-key:1:[A-Za-z0-9_-]{43}")
             assertThrows(IllegalArgumentException::class.java) { scope.mint(kind, exact.dropLast(1)) }
             assertThrows(IllegalArgumentException::class.java) { scope.mint(kind, exact + "excess") }
@@ -135,11 +198,14 @@ class ExchangeProtocolVectorsTest {
             OpaqueIdentityKind.SOURCE_ARTIFACT to OpaqueIdentityKind.PROVIDER_ARTIFACT,
         )
         pairs.forEach { (generic, provider) ->
-            val providerComponents = List(provider.componentCount) { if (it == 0) "withings" else "component-$it" }
-            val genericComponents = List(generic.componentCount) { if (it == 0) "health-connect" else "component-$it" }
+            val providerComponents = components(provider, "withings")
+            val genericComponents = components(generic, "health-connect")
             assertThrows(IllegalArgumentException::class.java) { scope.mint(generic, providerComponents) }
             assertThrows(IllegalArgumentException::class.java) { scope.mint(provider, genericComponents) }
         }
+        val repository = BusinessIdentifier(IdentifierSystem("https://accounts.example.org"), "patient")
+        assertThrows(IllegalArgumentException::class.java) { scope.sourceRecord("withings", "measure", repository, "record-1") }
+        assertThrows(IllegalArgumentException::class.java) { scope.providerRecord("health-connect", "StepsRecord", repository, "record-1") }
     }
 
     @Test
@@ -163,6 +229,27 @@ class ExchangeProtocolVectorsTest {
             val identifier = BusinessIdentifier(IdentifierSystem(vector.string("system")), vector.string("value"))
             assertThat(identifier.fullUrl).isEqualTo(vector.string("fullUrl"))
         }
+    }
+
+    @Test
+    fun `application and host facts derive the source-device tokens of the snapshot vectors`() {
+        val identities = vectors.array("identities").associate { it.jsonObject.string("id") to it.jsonObject }
+        val applications = mapOf(
+            "device-snapshot-per-event" to ApplicationDevice(name = "Mobile Study", packageName = "com.example.app", version = "1.2.3"),
+            "questionnaire-extraction-application-snapshot" to
+                ApplicationDevice(name = "Client", packageName = "org.grovealliance.example.client", version = "1.4.0", build = "1402"),
+        )
+        applications.forEach { (id, application) ->
+            val vector = identities.getValue(id)
+            val components = vector.array("components").map { it.jsonPrimitive.content }
+            val event = ExchangeEventIdentifier.from(BusinessIdentifier(IdentifierSystem(components[0]), components[1]))
+            assertThat(application.sourceDeviceToken).isEqualTo(components.last())
+            assertThat(scope.deviceSnapshot(event, DeviceSnapshotRole.APPLICATION, application.sourceDeviceToken).identifier.value)
+                .isEqualTo(vector.string("value"))
+        }
+        assertThat(HostDevice(operatingSystemVersion = "16", manufacturer = "Example", modelNumber = "Phone One").sourceDeviceToken)
+            .isEqualTo("Example|Phone One|16")
+        assertThat(HostDevice(operatingSystemVersion = "16", name = "Pixel").sourceDeviceToken).isEqualTo("||16")
     }
 
     @Test
@@ -206,5 +293,30 @@ class ExchangeProtocolVectorsTest {
         assertThrows(IllegalArgumentException::class.java) { IdentifierSystem("not-absolute") }
         assertThrows(IllegalArgumentException::class.java) { IdentifierSystem("https://例.example/識別子") }
         assertThrows(IllegalArgumentException::class.java) { BusinessIdentifier(system, "\ud800") }
+    }
+
+    private fun components(kind: OpaqueIdentityKind, first: String): List<String> =
+        List(kind.componentCount) { index ->
+            when {
+                index == 0 -> first
+                kind.components[index] in ExchangeContract.unsignedDecimalComponents -> "$index"
+                else -> "component-$index"
+            }
+        }
+
+    private fun recordFirst(kind: OpaqueIdentityKind, components: List<String>): RoledIdentifier {
+        val (code, sourceType, system, value, nativeRecordId) = components
+        val recordScope = BusinessIdentifier(IdentifierSystem(system), value)
+        val source by lazy { scope.sourceRecord(code, sourceType, recordScope, nativeRecordId) }
+        val provider by lazy { scope.providerRecord(code, sourceType, recordScope, nativeRecordId) }
+        return when (kind) {
+            OpaqueIdentityKind.SOURCE_RECORD -> source.identifier
+            OpaqueIdentityKind.SOURCE_OUTPUT -> source.output(role = components[5], discriminator = components[6])
+            OpaqueIdentityKind.SOURCE_ARTIFACT -> source.artifact(formatCode = components[5], partIndex = components[6].toLong())
+            OpaqueIdentityKind.PROVIDER_RECORD -> provider.identifier
+            OpaqueIdentityKind.PROVIDER_OUTPUT -> provider.output(role = components[5], discriminator = components[6])
+            OpaqueIdentityKind.PROVIDER_ARTIFACT -> provider.artifact(formatCode = components[5], partIndex = components[6].toLong())
+            else -> error("${kind.code} does not extend a record identity.")
+        }
     }
 }

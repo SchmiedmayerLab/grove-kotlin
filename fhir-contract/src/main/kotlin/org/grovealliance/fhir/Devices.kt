@@ -26,8 +26,8 @@ public class ApplicationDevice(
         build?.let { requireNonblankScalar(it, "Application build") }
     }
 
-    /** The source-device token of this application's event snapshot. */
-    internal val sourceDeviceToken: String
+    /** The token this snapshot's device-snapshot identity is minted from: `packageName|version[|build]`, the vectors' form. */
+    public val sourceDeviceToken: String
         get() = listOfNotNull(packageName, version, build).joinToString("|")
 
     internal fun resource(): Device = Device().apply {
@@ -71,8 +71,11 @@ public class HostDevice(
         modelNumber?.let { requireNonblankScalar(it, "Host model number") }
     }
 
-    /** The source-device token of this host's event snapshot. */
-    internal val sourceDeviceToken: String
+    /**
+     * The token this snapshot's device-snapshot identity is minted from: `manufacturer|modelNumber|operatingSystemVersion`,
+     * an absent fact left empty; [name] is not part of it.
+     */
+    public val sourceDeviceToken: String
         get() = "${manufacturer.orEmpty()}|${modelNumber.orEmpty()}|$operatingSystemVersion"
 
     internal fun resource(): Device = Device().apply {
@@ -147,7 +150,13 @@ public sealed interface ConverterRole {
     public data class GatewayApplication(public val application: ApplicationDevice) : ConverterRole
 }
 
-/** The nodes of one exchange graph a repository may assign a `Resource.id` to. */
+/**
+ * The nodes of one exchange graph a repository may assign a `Resource.id` to.
+ *
+ * [WRITER] is the Device snapshot of the application or device that wrote the source record and
+ * [WRITER_HOST] the snapshot of its host; a platform that names its writer by identifier alone, as
+ * Health Connect names it by package, carries neither.
+ */
 public enum class ExchangeGraphNode {
     BUNDLE,
     PRIMARY_OUTPUT,
@@ -155,8 +164,8 @@ public enum class ExchangeGraphNode {
     RECORDING_DEVICE,
     APPLICATION_DEVICE,
     HOST_DEVICE,
-    SOURCE_AUTHOR,
-    SOURCE_AUTHOR_HOST,
+    WRITER,
+    WRITER_HOST,
     PROVENANCE,
 }
 

@@ -9,6 +9,9 @@ package org.grovealliance.fhir
 
 import com.google.common.collect.Range
 import com.google.common.truth.Truth.assertThat
+import org.hl7.fhir.r4.model.Identifier
+import org.hl7.fhir.r4.model.ResourceType
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.time.Instant
 
@@ -55,18 +58,38 @@ class ContractDefaultsTest {
         assertThat(GovernedSourceIdentifierDisclosurePolicy.Omit).isInstanceOf(GovernedSourceIdentifierDisclosurePolicy::class.java)
         assertThat(RouteDisclosurePolicy.entries).containsExactly(RouteDisclosurePolicy.OMIT, RouteDisclosurePolicy.AUTHORIZED)
         val target = RetractionTarget(
-            identifier = ConformanceFixtures.scope.sourceOutput(
-                "health-connect",
-                "StepsRecord",
-                ConformanceFixtures.eventContext().repositoryScope,
-                "record-1",
-                "single",
-                "step-count",
-            ),
-            resourceType = "Observation",
+            identifier = ConformanceFixtures.scope
+                .sourceRecord("health-connect", "StepsRecord", ConformanceFixtures.eventContext().repositoryScope, "record-1")
+                .output("single", "step-count"),
+            resourceType = ResourceType.Observation,
             role = RetractionTargetRole.PRIMARY_OUTPUT,
         )
         assertThat(target.nativeRecordIdentifier).isNull()
+    }
+
+    @Test
+    fun `a retraction target is typed and renders its native record identifier without a role`() {
+        val output = ConformanceFixtures.scope
+            .sourceRecord("health-connect", "StepsRecord", ConformanceFixtures.eventContext().repositoryScope, "record-1")
+            .output("single", "step-count")
+        val native = BusinessIdentifier(IdentifierSystem("https://study.example.org/fhir/identifiers/health-connect-records"), "record-1")
+        val target = RetractionTarget(output, ResourceType.Observation, RetractionTargetRole.PRIMARY_OUTPUT, native)
+        val rendered = target.toReference().getExtensionByUrl(ExchangeContract.RETRACTION_TARGET_NATIVE_IDENTIFIER_EXTENSION).value
+            as Identifier
+        assertThat(BusinessIdentifier.from(rendered)).isEqualTo(native)
+        assertThat(rendered.hasType()).isFalse()
+        assertThat(target.toReference().type).isEqualTo("Observation")
+        assertThrows(IllegalArgumentException::class.java) {
+            RetractionTarget(output, ResourceType.Device, RetractionTargetRole.PRIMARY_OUTPUT)
+        }
+    }
+
+    @Test
+    fun `the writer and its host are the graph nodes the IG Writer names`() {
+        assertThat(ExchangeGraphNode.entries.map { it.name }).containsExactly(
+            "BUNDLE", "PRIMARY_OUTPUT", "SOURCE_ARTIFACT", "RECORDING_DEVICE", "APPLICATION_DEVICE", "HOST_DEVICE",
+            "WRITER", "WRITER_HOST", "PROVENANCE",
+        ).inOrder()
     }
 
     @Test

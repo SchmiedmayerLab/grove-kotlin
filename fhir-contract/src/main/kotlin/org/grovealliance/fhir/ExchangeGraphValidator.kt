@@ -927,7 +927,7 @@ internal object ExchangeGraphValidator {
         if (requireNotNull(target["identifier"].asObject()).groveRoleCodes().single() != targetRole.identifierRole.code) {
             unclassified("$label.identifier.type", "The target role requires the ${targetRole.identifierRole.code} identifier role.")
         }
-        if (target.text("type") !in targetRole.resourceTypes) {
+        if (targetRole.resourceTypes.none { it.name == target.text("type") }) {
             fail(
                 ExchangeGraphRule.MOBILE_RETRACTION_ROLE_TARGET_TYPE,
                 "$label.type",

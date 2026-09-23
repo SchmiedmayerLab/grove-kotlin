@@ -12,24 +12,24 @@ import org.hl7.fhir.r4.model.Patient
 /** The participant, referenced through a deployment-scoped pseudonym or a bundled Patient entry. */
 public sealed interface Subject {
     /** The deployment-scoped pseudonym pair; never a Grove identity and never a reserved code system. */
-    public val identity: BusinessIdentifier
+    public val identifier: BusinessIdentifier
 
     /** An identifier-only logical Patient reference; the default, which fabricates no Bundle entry. */
-    public data class Logical(override val identity: BusinessIdentifier) : Subject {
+    public data class Logical(override val identifier: BusinessIdentifier) : Subject {
         init {
-            requirePseudonym(identity)
+            requirePseudonym(identifier)
         }
     }
 
     /** A concrete Patient bundled as an event-scoped entry that every output references by fullUrl. */
-    public class Bundled(override val identity: BusinessIdentifier, patient: Patient) : Subject {
+    public class Bundled(override val identifier: BusinessIdentifier, patient: Patient) : Subject {
         private val snapshot: Patient = patient.copy()
 
         init {
-            requirePseudonym(identity)
+            requirePseudonym(identifier)
             require(snapshot.contained.isEmpty()) { "A bundled Patient carries no contained resources." }
-            if (snapshot.identifier.none { it.system == identity.system.value && it.value == identity.value }) {
-                snapshot.addIdentifier(identity.toFhir())
+            if (snapshot.identifier.none { it.system == identifier.system.value && it.value == identifier.value }) {
+                snapshot.addIdentifier(identifier.toFhir())
             }
         }
 
@@ -37,12 +37,12 @@ public sealed interface Subject {
         public val patient: Patient
             get() = snapshot.copy()
 
-        override fun toString(): String = "Subject.Bundled(identity=$identity)"
+        override fun toString(): String = "Subject.Bundled(identifier=$identifier)"
     }
 
     private companion object {
-        fun requirePseudonym(identity: BusinessIdentifier) {
-            require(identity.system.value !in ExchangeContract.reservedPatientIdentifierSystems) {
+        fun requirePseudonym(identifier: BusinessIdentifier) {
+            require(identifier.system.value !in ExchangeContract.reservedPatientIdentifierSystems) {
                 "A subject pseudonym must not use a protocol-reserved code system."
             }
         }

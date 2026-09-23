@@ -20,9 +20,10 @@ import androidx.health.connect.client.records.metadata.Metadata
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.grovealliance.fhir.ConverterRole
-import org.grovealliance.fhir.ExchangeGraphDiagnostic
+import org.grovealliance.fhir.ExchangeGraphNode
 import org.grovealliance.fhir.ExchangeGraphRule
 import org.grovealliance.fhir.GovernedSourceIdentifierDisclosurePolicy
+import org.grovealliance.fhir.ProducerDiagnostic
 import org.grovealliance.fhir.RouteDisclosurePolicy
 import org.junit.Test
 import java.lang.reflect.Modifier
@@ -80,6 +81,7 @@ class HealthConnectCatalogTest {
             HealthConnectConversionFailure.IntentionallyUnsupported(HealthConnectSourceType.STEPS),
             HealthConnectConversionFailure.NotYetConvertible(HealthConnectSourceType.PLANNED_EXERCISE_SESSION),
             HealthConnectConversionFailure.PlatformExclusive(HealthConnectSourceType.STEPS),
+            HealthConnectConversionFailure.RepositoryIdWithoutNode(ExchangeGraphNode.RECORDING_DEVICE),
             HealthConnectConversionFailure.Unclassified(IllegalStateException("x")),
         ).map { it.diagnostic } + listOf(
             HealthConnectProjectionRefusal.NotHealthConnectOutput("x"),
@@ -90,21 +92,23 @@ class HealthConnectCatalogTest {
             HealthConnectProjectionRefusal.UnsupportedCode("x"),
         ).map { it.diagnostic }
         refusals.forEach { diagnostic ->
-            assertWithMessage(diagnostic.code).that(codes[diagnostic.code]?.severity).isEqualTo(ExchangeGraphDiagnostic.Severity.ERROR)
+            assertWithMessage(diagnostic.code).that(codes[diagnostic.code]?.severity).isEqualTo(ProducerDiagnostic.Severity.ERROR)
         }
         val warnings = listOf(
             HealthConnectConversionWarning.RecordingDeviceOmitted("x"),
             HealthConnectConversionWarning.SourceOffsetUnavailable("x"),
-            HealthConnectConversionWarning.UnmodeledMetadataWithheld(setOf("x")),
+            HealthConnectConversionWarning.UnmodeledMetadataWithheld(listOf("x")),
         ).map { it.diagnostic }
         warnings.forEach { diagnostic ->
-            assertWithMessage(diagnostic.code).that(codes[diagnostic.code]?.severity).isEqualTo(ExchangeGraphDiagnostic.Severity.WARNING)
+            assertWithMessage(diagnostic.code).that(codes[diagnostic.code]?.severity).isEqualTo(ProducerDiagnostic.Severity.WARNING)
         }
     }
 
     @Test
     fun `the Health Connect defaults follow the shared defaults table`() {
-        val options = HealthConnectConversionOptions(UserAuthoredTextPolicy.OMIT)
+        val options = HealthConnectConversionOptions.Default
+        assertThat(options).isEqualTo(HealthConnectConversionOptions())
+        assertThat(options.userAuthoredText).isEqualTo(UserAuthoredTextPolicy.OMIT)
         assertThat(options.recordingDevice).isSameInstanceAs(RecordingDeviceResolver.None)
         assertThat(options.routeDisclosure).isEqualTo(RouteDisclosurePolicy.OMIT)
         assertThat(options.nativeIdentifierDisclosure).isEqualTo(GovernedSourceIdentifierDisclosurePolicy.Omit)
@@ -117,9 +121,10 @@ class HealthConnectCatalogTest {
             identityScope = HealthConnectTestFixtures.scope,
             repositoryScope = HealthConnectTestFixtures.repositoryScope,
             application = HealthConnectTestFixtures.application,
-            options = options,
             host = HealthConnectTestFixtures.host,
         )
+        assertThat(context.options).isSameInstanceAs(HealthConnectConversionOptions.Default)
+        assertThat(HealthConnectConversionContext(context.event)).isEqualTo(context)
         assertThat(context.event.converterRole).isEqualTo(ConverterRole.Assembler)
         assertThat(context.event.studies).isEmpty()
         assertThat(context.event.repositoryIds).isEmpty()

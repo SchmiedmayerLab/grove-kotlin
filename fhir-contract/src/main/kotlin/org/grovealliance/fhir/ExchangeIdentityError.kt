@@ -15,23 +15,29 @@ package org.grovealliance.fhir
  */
 public sealed interface ExchangeIdentityError {
     /** The registry diagnostic this error reports. */
-    public val diagnostic: ExchangeGraphDiagnostic
+    public val diagnostic: ProducerDiagnostic
 
     /** A source text carries an unpaired UTF-16 surrogate and cannot enter a preimage. */
     public data class NonScalarText(public val path: String) : ExchangeIdentityError {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_TEXT_NOT_UNICODE_SCALAR.at(path)
     }
 
     /** A source field the identity kind requires is absent or empty. */
     public data class EmptyComponent(public val path: String) : ExchangeIdentityError {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_REQUIRED_METADATA_MISSING.at(path)
+    }
+
+    /** A part index is not a canonical unsigned decimal: it carries a sign, whitespace or a leading zero. */
+    public data class NonCanonicalPartIndex(public val path: String) : ExchangeIdentityError {
+        override val diagnostic: ProducerDiagnostic
+            get() = ExchangeGraphRule.MOBILE_INPUT_UNCLASSIFIED.at(path)
     }
 
     /** A stored identifier does not have the canonical event or opaque identity form. */
     public data class MalformedIdentifier(public val path: String) : ExchangeIdentityError {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_EXCHANGE_EVENT_IDENTITY.at(path)
     }
 }

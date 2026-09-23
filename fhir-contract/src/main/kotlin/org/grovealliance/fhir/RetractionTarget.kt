@@ -9,18 +9,17 @@ package org.grovealliance.fhir
 
 import org.hl7.fhir.r4.model.CodeType
 import org.hl7.fhir.r4.model.Extension
-import org.hl7.fhir.r4.model.Identifier
 import org.hl7.fhir.r4.model.Reference
+import org.hl7.fhir.r4.model.ResourceType
 
 /** One prior graph node a retraction names by its typed logical identifier, target role and resource type. */
 public class RetractionTarget(
     public val identifier: RoledIdentifier,
-    public val resourceType: String,
+    public val resourceType: ResourceType,
     public val role: RetractionTargetRole,
-    nativeRecordIdentifier: Identifier? = null,
+    /** The exact source-native identifier of the retracted record, when the deployment's disclosure policy authorized it. */
+    public val nativeRecordIdentifier: BusinessIdentifier? = null,
 ) {
-    private val nativeSnapshot: Identifier? = nativeRecordIdentifier?.copy()
-
     init {
         require(identifier.role == role.identifierRole) {
             "Retraction target role ${role.code} requires the ${role.identifierRole.code} identifier role."
@@ -28,32 +27,22 @@ public class RetractionTarget(
         require(resourceType in role.resourceTypes) {
             "Retraction target role ${role.code} does not admit resource type $resourceType."
         }
-        nativeSnapshot?.let { native ->
-            BusinessIdentifier.from(native)
-            require(native.type.coding.none { it.system == ExchangeContract.GROVE_IDENTIFIER_ROLE }) {
-                "A native record identifier never carries a Grove identifier-role coding."
-            }
-        }
     }
 
-    /** The exact source-native identifier of the retracted record, when the deployment disclosed it. */
-    public val nativeRecordIdentifier: Identifier?
-        get() = nativeSnapshot?.copy()
-
     internal fun toReference(): Reference = Reference().apply {
-        type = resourceType
+        type = resourceType.name
         identifier = this@RetractionTarget.identifier.toFhir()
         addExtension(Extension(ExchangeContract.RETRACTION_TARGET_ROLE_EXTENSION, CodeType(role.code)))
-        nativeSnapshot?.let {
-            addExtension(Extension(ExchangeContract.RETRACTION_TARGET_NATIVE_IDENTIFIER_EXTENSION, it.copy()))
+        nativeRecordIdentifier?.let {
+            addExtension(Extension(ExchangeContract.RETRACTION_TARGET_NATIVE_IDENTIFIER_EXTENSION, it.toFhir()))
         }
     }
 
     override fun equals(other: Any?): Boolean =
         other is RetractionTarget && identifier == other.identifier && resourceType == other.resourceType &&
-            role == other.role && (nativeSnapshot?.equalsDeep(other.nativeSnapshot) ?: (other.nativeSnapshot == null))
+            role == other.role && nativeRecordIdentifier == other.nativeRecordIdentifier
 
-    override fun hashCode(): Int = listOf(identifier, resourceType, role).hashCode()
+    override fun hashCode(): Int = listOf(identifier, resourceType, role, nativeRecordIdentifier).hashCode()
 
     override fun toString(): String =
         "RetractionTarget(identifier=$identifier, resourceType=$resourceType, role=${role.code})"

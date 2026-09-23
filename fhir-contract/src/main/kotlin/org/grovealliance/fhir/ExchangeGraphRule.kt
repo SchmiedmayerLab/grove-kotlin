@@ -13,488 +13,488 @@ package org.grovealliance.fhir
 public enum class ExchangeGraphRule(
     public val code: String,
     public val reason: String,
-    public val severity: ExchangeGraphDiagnostic.Severity,
+    public val severity: ProducerDiagnostic.Severity,
 ) {
     MOBILE_EXCHANGE_UNCLASSIFIED(
         code = "mobile-exchange.unclassified",
         reason = "A producer-contract failure reached the exchange diagnostic boundary without a more specific " +
             "registered rule; validation fails closed and the conformance kit must classify the gap.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_NODE_KEY(
         code = "mobile-exchange.entry-node-key",
         reason = "Every Bundle entry must carry exactly one complete Grove exchange entry node key.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_DETERMINISTIC_FULL_URL(
         code = "mobile-exchange.deterministic-full-url",
         reason = "Bundle.entry.fullUrl must be the UUID version 5 value derived from its complete entry identifier.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_RESOLVED_REFERENCE(
         code = "mobile-exchange.resolved-reference",
         reason = "Every internal UUID URN reference must resolve to a Bundle entry fullUrl.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_EVENT_IDENTITY(
         code = "mobile-exchange.event-identity",
         reason = "Bundle.identifier.value must be the canonical e0 producer UUID and positive sequence form.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_NODE_DIGEST(
         code = "mobile-exchange.entry-node-digest",
         reason = "An entry-node digest must be derived from the enclosing event identifier, role, and ordinal.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_NODE_ORDINAL(
         code = "mobile-exchange.entry-node-ordinal",
         reason = "An entry-node ordinal is the zero-based position of its entry among the entries sharing that " +
             "node-role, in Bundle entry order.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_IDENTITY_SYSTEM_ROLE(
         code = "mobile-exchange.identity-system-role",
         reason = "Within one event graph, each Grove Identifier.system names exactly one Grove identifier role; one " +
             "namespace cannot change meaning between nodes.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_SOURCE_OUTPUT_REQUIRED(
         code = "mobile-output.source-output-required",
         reason = "Every active clinical output must carry its exact typed source-output identity in addition to " +
             "source-record identity.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_HYBRID_COMPANION(
         code = "mobile-output.hybrid-companion",
         reason = "A hybrid-required output and its exact source-preservation companion must form the catalog-declared " +
             "closed, same-source, bidirectionally linked graph.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_ECG_OUTPUT_GRAPH(
         code = "healthkit-ecg.output-graph",
         reason = "A HealthKit ECG event must satisfy the catalog-owned waveform, optional average-heart-rate, " +
             "symptom-member, relationship-direction, identity, and effective-period graph contract.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_TRANSFORM_PROVENANCE(
         code = "mobile-exchange.transform-provenance",
         reason = "An active event must contain exactly one transform Provenance and no retraction Provenance.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_LOGICAL_TARGET(
         code = "mobile-retraction.logical-target",
         reason = "A retraction target must be a typed logical Reference without a literal reference.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_TARGET_ROLE(
         code = "mobile-retraction.target-role",
         reason = "Every retraction target must carry exactly one closed Grove target-role code.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_OPAQUE_TARGET(
         code = "mobile-retraction.opaque-target",
         reason = "A retraction target must use the exact canonical v0 HMAC identity previously emitted.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_NATIVE_RECORD_IDENTIFIER(
         code = "mobile-retraction.native-record-identifier",
         reason = "An optional retraction native record identifier carries one complete Identifier in the adapter's own " +
             "absolute native key space and never a Grove identifier-role coding.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_COLLECTION_ENTRY_OPERATION(
         code = "mobile-exchange.collection-entry-operation",
         reason = "A Mobile exchange event is a collection Bundle; an entry may carry neither a request nor a response, " +
             "because an event is an assertion and never a transaction instruction.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_SUPPORT_QUESTIONNAIRE_RESPONSE_PROFILE(
         code = "mobile-support.questionnaire-response-profile",
         reason = "Every supporting QuestionnaireResponse must directly claim exactly the Grove Questionnaire Response " +
             "profile.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_DEVICE_RECORDING_DEVICE_DUAL_IDENTITY(
         code = "mobile-device.recording-device-dual-identity",
         reason = "A recording Device carries both its durable recording-device identity and its event-scoped " +
             "device-snapshot identity; neither may stand alone.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_CLINICAL_FHIR_REPRESENTATION(
         code = "healthkit-clinical.fhir-representation",
         reason = "A HealthKit clinical-record envelope must carry the exact admitted FHIR release and preserve the " +
             "source representation its adapter contract declares.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     SENSOR_RECORDING_DOCUMENT_IDENTITY_AND_CONTENT(
         code = "sensor-recording-document.identity-and-content",
         reason = "Every Sensor Recording Document carries its source-record, source-output, and source-artifact " +
             "identities together with exactly one attachment payload.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_NO_CLINICAL_COPY(
         code = "mobile-retraction.no-clinical-copy",
         reason = "A retraction event contains its lifecycle Provenance and optional Device agents, never a copied or " +
             "mutilated clinical resource.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_LIFECYCLE_CODING(
         code = "mobile-exchange.lifecycle-coding",
         reason = "A lifecycle Provenance must carry exactly one coding across the ISO transform and Grove retraction " +
             "lifecycle systems; translations from other systems remain open.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_SEMANTIC_PROFILE(
         code = "mobile-output.semantic-profile",
         reason = "Every active Observation must directly claim one admitted Grove semantic profile shape; an empty " +
             "claim cannot bypass semantic validation.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_FIXED_QUANTITY_UNIT(
         code = "mobile-output.fixed-quantity-unit",
         reason = "Every Quantity-valued catalog measurement uses the exact fixed system and code declared by its " +
             "semantic profile contract.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_QUANTITY_VALUE_DOMAIN(
         code = "mobile-output.quantity-value-domain",
         reason = "Every Quantity-valued catalog measurement stays within its catalog-declared representational " +
             "minimum, maximum, and integer-only domain without inventing a physiologic range.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_REFERENCE_TARGET_TYPE(
         code = "mobile-exchange.reference-target-type",
         reason = "Every governed Patient reference resolves to a Patient entry, not merely to any existing fullUrl.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_REFERENCE_DECLARED_TYPE(
         code = "mobile-exchange.reference-declared-type",
         reason = "When Reference.type is present it must equal the referenced entry's actual resourceType token.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_LOGICAL_SOURCE_ENTITY(
         code = "mobile-exchange.logical-source-entity",
         reason = "Lifecycle Provenance carries exactly one logical source-record Identifier entity and never a literal " +
             "source Reference.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_ROLE_TARGET_TYPE(
         code = "mobile-retraction.role-target-type",
         reason = "Every retraction target role fixes its admitted resource type and Identifier role.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_SINGLE_SOURCE_ENTITY(
         code = "mobile-exchange.single-source-entity",
         reason = "A lifecycle Provenance identifies exactly one source-record entity.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_REFERENCE_SHAPE(
         code = "mobile-exchange.reference-shape",
         reason = "Each governed path has its declared singular or repeating shape and contains valid Reference objects " +
             "that are exclusively resolving-literal or identifier-only logical, never both.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_LOGICAL_PATIENT_REFERENCE(
         code = "mobile-exchange.logical-patient-reference",
         reason = "An identifier-only logical Patient Reference carries the exact Patient type and one complete " +
             "absolute-system pseudonym Identifier without a Grove role or protocol-reserved system.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_ADAPTER_ONLY_PROFILE(
         code = "mobile-output.adapter-only-profile",
         reason = "An adapter-only active output type must directly claim exactly its one admitted adapter profile.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_RESOURCE_TYPE(
         code = "mobile-exchange.entry-resource-type",
         reason = "An active event admits only its closed output, supporting, and lifecycle resource type set.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_CONTAINED_RESOURCE_PROHIBITED(
         code = "mobile-exchange.contained-resource-prohibited",
         reason = "Mobile exchange events prohibit contained resources; every graph node must be an addressable Bundle " +
             "entry.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_DOCUMENT_PROFILE(
         code = "mobile-output.document-profile",
         reason = "Every active DocumentReference must directly claim exactly one admitted recording or " +
             "clinical-document profile mode.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_SUPPORT_DEVICE_PROFILE(
         code = "mobile-support.device-profile",
         reason = "Every active Device must directly claim exactly one admitted Grove Device profile mode.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_SUPPORT_CONNECTED(
         code = "mobile-support.connected",
         reason = "Every supporting resource must be connected to an output or the lifecycle Provenance.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_PROVENANCE_PROFILE(
         code = "mobile-exchange.provenance-profile",
         reason = "The sole active lifecycle Provenance must directly claim exactly one admitted Mobile or adapter " +
             "conversion profile.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_UNCLASSIFIED(
         code = "mobile-input.unclassified",
         reason = "A producer refused a source record without a more specific registered input rule; the refusal is " +
             "reported, never silently dropped.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE(
         code = "mobile-input.unsupported-source-type",
         reason = "The source type has no admitted Grove profile in the adapter catalog, so the producer emits nothing " +
             "for it.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_INTENTIONALLY_UNSUPPORTED_SOURCE_TYPE(
         code = "mobile-input.intentionally-unsupported-source-type",
         reason = "The adapter catalog deliberately refuses the source type for its stated reason; the producer emits " +
             "no best-effort representation.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_NOT_YET_CONVERTIBLE(
         code = "mobile-input.not-yet-convertible",
         reason = "The adapter catalog admits the source type, but this producer version does not yet emit its graph.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_PLATFORM_EXCLUSIVE_SOURCE_TYPE(
         code = "mobile-input.platform-exclusive-source-type",
         reason = "The source type is admitted only as a platform-exclusive recording document, which this conversion " +
             "path does not emit.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_VALUE_SHAPE_INVALID(
         code = "mobile-input.value-shape-invalid",
         reason = "The source value does not have the shape its selected published mapping requires.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_VALUE_OUTSIDE_DOMAIN(
         code = "mobile-input.value-outside-domain",
         reason = "A numeric source value is nonfinite, outside the measurement's inclusive value domain, or fractional " +
             "where the contract admits only integers.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_UNSUPPORTED_SOURCE_VALUE(
         code = "mobile-input.unsupported-source-value",
         reason = "A source enumeration, category, or typed metadata value has no published mapping in the selected " +
             "contract.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_REQUIRED_METADATA_MISSING(
         code = "mobile-input.required-metadata-missing",
         reason = "A source field the selected contract requires is absent from the record.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_REQUIRED_COMPONENT_MISSING(
         code = "mobile-input.required-component-missing",
         reason = "A panel source record does not carry one of its required result components.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_EFFECTIVE_PERIOD_INVALID(
         code = "mobile-input.effective-period-invalid",
         reason = "The source record's effective instant or period is not a valid FHIR date or time, starts after it " +
             "ends, or places a sample outside its own interval.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_CONVERSION_INSTANT_PRECEDES_SOURCE_VERSION(
         code = "mobile-input.conversion-instant-precedes-source-version",
         reason = "The conversion instant precedes the source record's own last-modified time, so the event would " +
             "misstate its order.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_TEXT_NOT_UNICODE_SCALAR(
         code = "mobile-input.text-not-unicode-scalar",
         reason = "A source text field contains an unpaired UTF-16 surrogate and cannot enter a FHIR string or an " +
             "identity preimage.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_NATIVE_IDENTIFIER_INVALID(
         code = "mobile-input.native-identifier-invalid",
         reason = "The source's native record identifier or writer record version is absent, blank, or negative where " +
             "the contract requires a value.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_RECORDING_PAYLOAD_TOO_LARGE(
         code = "mobile-input.recording-payload-too-large",
         reason = "A recording payload exceeds the byte count FHIR Attachment.size can state, and no segmented manifest " +
             "profile exists yet.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_INPUT_EMPTY_RECORDING_SERIES(
         code = "mobile-input.empty-recording-series",
         reason = "A series carried as a recording document was supplied without samples, so an empty series cannot be " +
             "told from a failed enumeration.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_INPUT_ECG_EVIDENCE(
         code = "healthkit-input.ecg-evidence",
         reason = "Caller-supplied electrocardiogram evidence is missing, incomplete, internally inconsistent, or " +
             "cannot be represented losslessly by the adapter contract; the typed failure names the failing check.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_INPUT_CLINICAL_RELEASE_UNSUPPORTED(
         code = "healthkit-input.clinical-release-unsupported",
         reason = "A clinical record declares a FHIR release other than DSTU2 or R4, so its bytes cannot be carried " +
             "under a versioned FHIR JSON media type.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_INPUT_CLINICAL_RECORD_EMPTY(
         code = "healthkit-input.clinical-record-empty",
         reason = "A clinical record or CDA sample carries no resource or document bytes, which a query that excludes " +
             "document data returns.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_INPUT_COMPONENT_REQUIRES_CORRELATION(
         code = "healthkit-input.component-requires-correlation",
         reason = "A blood pressure component sample converts only inside its admitting correlation, never on its own.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_INPUT_SOURCE_APPLICATION_INVALID(
         code = "healthkit-input.source-application-invalid",
         reason = "A source revision the caller classified as an application carries no valid Apple bundle identifier.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_BUNDLE_PROFILE(
         code = "mobile-exchange.bundle-profile",
         reason = "An exchange Bundle directly claims exactly the Grove Mobile exchange or retraction Bundle profile " +
             "for its event kind.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_REQUIRED(
         code = "mobile-exchange.entry-required",
         reason = "An exchange event carries at least one entry; an empty Bundle is not an event.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_EVENT_TIMES(
         code = "mobile-exchange.event-times",
         reason = "An event states its Bundle timestamp, and its lifecycle Provenance states occurred[x] and recorded.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_DISTINCT_ENTRY_KEY(
         code = "mobile-exchange.distinct-entry-key",
         reason = "No two entries of one event carry the same entry key system and value pair.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ENTRY_KEY_SELECTION(
         code = "mobile-exchange.entry-key-selection",
         reason = "An entry key is the entry resource's highest-priority typed business identifier, or its entry-node " +
             "key when the resource carries none.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_IDENTIFIER_ROLE(
         code = "mobile-exchange.identifier-role",
         reason = "A Grove-typed resource Identifier carries exactly one closed Grove identifier-role coding.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_OPAQUE_RESOURCE_IDENTITY(
         code = "mobile-exchange.opaque-resource-identity",
         reason = "A resource Identifier typed with an opaque Grove identifier role is one complete pair whose system " +
             "is absolute and whose value is a canonical v0 HMAC identity.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_DISTINCT_RESOURCE_IDENTITY_ROLE(
         code = "mobile-exchange.distinct-resource-identity-role",
         reason = "A resource carries at most one Identifier for each Grove identifier role.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_OUTPUT_REQUIRED(
         code = "mobile-exchange.output-required",
         reason = "An active event carries at least one clinical or source-artifact output.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_PROVENANCE_ASSEMBLER(
         code = "mobile-exchange.provenance-assembler",
         reason = "A conversion Provenance names exactly one assembler agent, and that agent is the event's application " +
             "Device snapshot.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_PROVENANCE_TARGETS(
         code = "mobile-exchange.provenance-targets",
         reason = "A conversion Provenance targets every active clinical output of its event and nothing else.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_EXCHANGE_ADAPTER_PROVENANCE_GRAPH(
         code = "mobile-exchange.adapter-provenance-graph",
         reason = "Every adapter output of an event claims the adapter profile its conversion Provenance governs, and a " +
             "source-neutral event claims no adapter output.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OUTPUT_ADAPTER_SOURCE_MARKER(
         code = "mobile-output.adapter-source-marker",
         reason = "An adapter's source marker appears exactly once on each catalog-owned output of that adapter and " +
             "never on a source-neutral or different-adapter output.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_DEVICE_HOST_DEVICE_IDENTITY(
         code = "mobile-device.host-device-identity",
         reason = "A host Device carries exactly one event-scoped device-snapshot identity.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_SUPPORT_STUDY_CONTEXT(
         code = "mobile-support.study-context",
         reason = "A bundled study context carries one ResearchStudy, its exact-revision PlanDefinition with canonical " +
             "url and version, and one ResearchSubject linking the subject to the study, each keyed as an entry " +
             "node with its study-context role.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTHKIT_DEVICE_APPLICATION_BUNDLE_IDENTIFIER(
         code = "healthkit-device.application-bundle-identifier",
         reason = "A HealthKit application Device carries exactly one typed Apple bundle identifier.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     HEALTH_CONNECT_PROVENANCE_DATA_ORIGIN_AGENT(
         code = "health-connect-provenance.data-origin-agent",
         reason = "A Health Connect data origin is one enterer agent whose typed identifier-only logical Device " +
             "Reference names the Android package in the package-name namespace.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     SENSOR_RECORDING_DOCUMENT_EMBEDDED_INTEGRITY(
         code = "sensor-recording-document.embedded-integrity",
         reason = "An embedded recording attachment's size and SHA-1 hash match its decoded bytes.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     SENSOR_RECORDING_DOCUMENT_FORMAT(
         code = "sensor-recording-document.format",
         reason = "A recording attachment's format coding and content type match one active entry of the Grove " +
             "recording-format registry, with no Coding.version.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_PROVENANCE(
         code = "mobile-retraction.provenance",
         reason = "A retraction event carries exactly one retraction Provenance and no transform Provenance.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_TARGET_REQUIRED(
         code = "mobile-retraction.target-required",
         reason = "A retraction Provenance names at least one logical target.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_RETRACTION_DISTINCT_TARGET(
         code = "mobile-retraction.distinct-target",
         reason = "No two retraction targets carry the same Identifier system and value pair.",
-        severity = ExchangeGraphDiagnostic.Severity.ERROR,
+        severity = ProducerDiagnostic.Severity.ERROR,
     ),
     MOBILE_OMISSION_RECORDING_DEVICE(
         code = "mobile-omission.recording-device",
         reason = "The source names a recording device without a stable per-unit token, so the producer emits no " +
             "recording Device and the output carries no device reference.",
-        severity = ExchangeGraphDiagnostic.Severity.WARNING,
+        severity = ProducerDiagnostic.Severity.WARNING,
     ),
     MOBILE_OMISSION_SOURCE_OFFSET(
         code = "mobile-omission.source-offset",
         reason = "The source supplies an effective instant without a UTC offset or time-zone name, so the producer " +
             "serializes it in UTC and attaches no timezone extension.",
-        severity = ExchangeGraphDiagnostic.Severity.WARNING,
+        severity = ProducerDiagnostic.Severity.WARNING,
     ),
     MOBILE_OMISSION_UNMODELED_METADATA(
         code = "mobile-omission.unmodeled-metadata",
         reason = "The source record carries metadata outside the adapter's typed allowlist, so the producer withholds " +
             "those fields.",
-        severity = ExchangeGraphDiagnostic.Severity.WARNING,
+        severity = ProducerDiagnostic.Severity.WARNING,
     ),
     ;
 

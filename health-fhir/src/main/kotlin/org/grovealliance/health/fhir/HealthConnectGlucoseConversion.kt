@@ -30,7 +30,7 @@ internal fun RecordConversion.convertBloodGlucose(record: BloodGlucoseRecord): H
         specimenIdentity,
         Specimen().apply {
             meta.addProfile(HealthConnectContract.HEALTH_CONNECT_SPECIMEN_PROFILE)
-            addIdentifier(sourceRecord.toFhir())
+            addIdentifier(sourceRecord.identifier.toFhir())
             addIdentifier(specimenIdentity.toFhir())
             status = Specimen.SpecimenStatus.AVAILABLE
             type = requireNotNull(specimenSource.specimenType).concept()

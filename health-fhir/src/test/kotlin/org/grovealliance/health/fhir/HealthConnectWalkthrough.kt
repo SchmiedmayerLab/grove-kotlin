@@ -14,14 +14,17 @@ import org.grovealliance.fhir.BusinessIdentifier
 import org.grovealliance.fhir.DeploymentIdentifierSystems
 import org.grovealliance.fhir.EventSequence
 import org.grovealliance.fhir.ExchangeEventIdentifier
-import org.grovealliance.fhir.ExchangeGraphDiagnostic
 import org.grovealliance.fhir.IdentifierSystem
 import org.grovealliance.fhir.OpaqueIdentityScope
+import org.grovealliance.fhir.ProducerDiagnostic
+import org.grovealliance.fhir.RetractionEvent
+import org.grovealliance.fhir.RoledIdentifier
 import org.grovealliance.fhir.Subject
+import java.time.Instant
 import java.util.UUID
 import javax.crypto.SecretKey
 
-/** The three code blocks of the module README, compiled so the walkthrough cannot drift from the API. */
+/** The three code blocks of the module README and its retraction block, compiled so they cannot drift from the API. */
 internal object HealthConnectWalkthrough {
     data class Installation(
         val systems: DeploymentIdentifierSystems,
@@ -57,7 +60,6 @@ internal object HealthConnectWalkthrough {
             identityScope = scope,
             repositoryScope = repositoryScope,
             application = application,
-            options = HealthConnectConversionOptions(userAuthoredText = UserAuthoredTextPolicy.OMIT),
         )
     }
 
@@ -66,12 +68,23 @@ internal object HealthConnectWalkthrough {
         record: Record,
         context: HealthConnectConversionContext,
         upload: (ByteArray) -> Unit,
-        log: (ExchangeGraphDiagnostic) -> Unit,
+        log: (ProducerDiagnostic) -> Unit,
     ) {
         when (val result = HealthConnectConverter().convert(record, context)) {
             is HealthConnectConversionResult.Converted -> upload(result.conversion.graph.json.toByteArray())
             is HealthConnectConversionResult.NoOutput -> Unit
             is HealthConnectConversionResult.Failed -> log(result.failure.diagnostic)
         }
+    }
+
+    /** Retract a deleted steps record under the context it was exported with. */
+    fun retract(
+        id: String,
+        context: HealthConnectConversionContext,
+        nextContext: HealthConnectConversionContext,
+        sourceRecord: RoledIdentifier,
+    ): RetractionEvent {
+        val targets = HealthConnectConverter().retractionTargets(HealthConnectSourceRecord(id, HealthConnectSourceType.STEPS), context)
+        return RetractionEvent(targets, nextContext.event, sourceRecord, retractedAt = Instant.now())
     }
 }

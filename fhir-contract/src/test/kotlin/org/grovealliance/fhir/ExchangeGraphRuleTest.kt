@@ -22,7 +22,7 @@ class ExchangeGraphRuleTest {
     fun `the rule enum carries every registered code once with its reason and severity`() {
         assertThat(ExchangeGraphRule.entries).hasSize(REGISTRY_SIZE)
         assertThat(ExchangeGraphRule.entries.map { it.code }).containsNoDuplicates()
-        val warnings = ExchangeGraphRule.entries.filter { it.severity == ExchangeGraphDiagnostic.Severity.WARNING }
+        val warnings = ExchangeGraphRule.entries.filter { it.severity == ProducerDiagnostic.Severity.WARNING }
         assertThat(warnings.map { it.code }).containsExactly(
             "mobile-omission.recording-device",
             "mobile-omission.source-offset",
@@ -32,7 +32,7 @@ class ExchangeGraphRuleTest {
         assertThat(ExchangeGraphRule.of("mobile-input.invented")).isNull()
         val diagnostic = ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE.at("Record")
         assertThat(diagnostic.reason).isEqualTo(ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE.reason)
-        assertThat(diagnostic.severity).isEqualTo(ExchangeGraphDiagnostic.Severity.ERROR)
+        assertThat(diagnostic.severity).isEqualTo(ProducerDiagnostic.Severity.ERROR)
     }
 
     @Test

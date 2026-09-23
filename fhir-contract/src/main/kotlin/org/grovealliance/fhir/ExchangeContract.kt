@@ -9,6 +9,8 @@
 
 package org.grovealliance.fhir
 
+import org.hl7.fhir.r4.model.ResourceType
+
 /** Canonicals of the Grove Mobile exchange protocol, projected from the grove-fhir catalogs. */
 public object ExchangeContract {
     public const val FHIR_VERSION: String = "4.0.1"
@@ -116,6 +118,11 @@ public object ExchangeContract {
         "google-health-api",
         "oura",
         "withings",
+    )
+
+    /** Opaque identity components whose value must be a canonical unsigned decimal. */
+    public val unsignedDecimalComponents: Set<String> = setOf(
+        "part-index",
     )
 
     /** Closed resource types admitted in a Mobile active event graph. */
@@ -562,37 +569,42 @@ public enum class RetractionTargetRole(
     public val code: String,
     public val display: String,
     public val identifierRole: GroveIdentifierRole,
-    public val resourceTypes: Set<String>,
+    public val resourceTypes: Set<ResourceType>,
 ) {
     CHILD_OUTPUT(
         code = "child-output",
         display = "Child output",
         identifierRole = GroveIdentifierRole.SOURCE_OUTPUT,
-        resourceTypes = setOf("Observation"),
+        resourceTypes = setOf(ResourceType.Observation),
     ),
     DEVICE_SNAPSHOT(
         code = "device-snapshot",
         display = "Device snapshot",
         identifierRole = GroveIdentifierRole.DEVICE_SNAPSHOT,
-        resourceTypes = setOf("Device"),
+        resourceTypes = setOf(ResourceType.Device),
     ),
     PRIMARY_OUTPUT(
         code = "primary-output",
         display = "Primary output",
         identifierRole = GroveIdentifierRole.SOURCE_OUTPUT,
-        resourceTypes = setOf("Observation", "VisionPrescription", "MedicationAdministration", "MedicationStatement"),
+        resourceTypes = setOf(
+            ResourceType.Observation,
+            ResourceType.VisionPrescription,
+            ResourceType.MedicationAdministration,
+            ResourceType.MedicationStatement,
+        ),
     ),
     SOURCE_ARTIFACT(
         code = "source-artifact",
         display = "Source artifact",
         identifierRole = GroveIdentifierRole.SOURCE_OUTPUT,
-        resourceTypes = setOf("DocumentReference"),
+        resourceTypes = setOf(ResourceType.DocumentReference),
     ),
     SPECIMEN(
         code = "specimen",
         display = "Specimen",
         identifierRole = GroveIdentifierRole.SOURCE_OUTPUT,
-        resourceTypes = setOf("Specimen"),
+        resourceTypes = setOf(ResourceType.Specimen),
     ),
     ;
 

@@ -7,10 +7,11 @@
 
 package org.grovealliance.health.fhir
 
-import org.grovealliance.fhir.ExchangeGraphDiagnostic
 import org.grovealliance.fhir.ExchangeGraphError
+import org.grovealliance.fhir.ExchangeGraphNode
 import org.grovealliance.fhir.ExchangeGraphRule
 import org.grovealliance.fhir.ExchangeIdentityError
+import org.grovealliance.fhir.ProducerDiagnostic
 import org.grovealliance.fhir.at
 
 /** Why one source value refused conversion; every case is one `mobile-input.*` registry rule at a source field. */
@@ -22,7 +23,7 @@ public sealed interface HealthConnectValueFailure {
     public val path: String
 
     /** The registry diagnostic at the source field. */
-    public val diagnostic: ExchangeGraphDiagnostic
+    public val diagnostic: ProducerDiagnostic
         get() = rule.at(path)
 
     /** The source value does not have the shape its mapping requires. */
@@ -70,11 +71,11 @@ public sealed interface HealthConnectValueFailure {
 /** Why one Health Connect record produced no graph; every case carries exactly one registry diagnostic. */
 public sealed interface HealthConnectConversionFailure {
     /** The registry diagnostic this failure reports. */
-    public val diagnostic: ExchangeGraphDiagnostic
+    public val diagnostic: ProducerDiagnostic
 
     /** The Record class is outside the catalog inventory or the catalog admits no profile for it. */
     public data class UnsupportedSourceType(public val recordType: String) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_UNSUPPORTED_SOURCE_TYPE.at(recordType)
     }
 
@@ -82,19 +83,19 @@ public sealed interface HealthConnectConversionFailure {
     public data class IntentionallyUnsupported(
         public val type: HealthConnectSourceType,
     ) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_INTENTIONALLY_UNSUPPORTED_SOURCE_TYPE.at(type.token)
     }
 
     /** The catalog admits the source type, but this producer version does not yet emit its graph. */
     public data class NotYetConvertible(public val type: HealthConnectSourceType) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_NOT_YET_CONVERTIBLE.at(type.token)
     }
 
     /** The source type is admitted only as a platform-exclusive recording document. */
     public data class PlatformExclusive(public val type: HealthConnectSourceType) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_PLATFORM_EXCLUSIVE_SOURCE_TYPE.at(type.token)
     }
 
@@ -103,22 +104,28 @@ public sealed interface HealthConnectConversionFailure {
         public val type: HealthConnectSourceType,
         public val reason: HealthConnectValueFailure,
     ) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic get() = reason.diagnostic
+        override val diagnostic: ProducerDiagnostic get() = reason.diagnostic
+    }
+
+    /** A repository id names a node this record's graph does not carry, such as a recording device the resolver declined. */
+    public data class RepositoryIdWithoutNode(public val node: ExchangeGraphNode) : HealthConnectConversionFailure {
+        override val diagnostic: ProducerDiagnostic
+            get() = ExchangeGraphRule.MOBILE_INPUT_UNCLASSIFIED.at("HealthConnectConversionContext")
     }
 
     /** A source-derived identity could not be minted. */
     public data class ExchangeIdentity(public val error: ExchangeIdentityError) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic get() = error.diagnostic
+        override val diagnostic: ProducerDiagnostic get() = error.diagnostic
     }
 
     /** The assembled graph violated the exchange protocol. */
     public data class ExchangeGraph(public val error: ExchangeGraphError) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic get() = error.diagnostic
+        override val diagnostic: ProducerDiagnostic get() = error.diagnostic
     }
 
     /** A precondition of the FHIR model or the contract failed without a more specific rule. */
     public data class Unclassified(public val cause: Throwable) : HealthConnectConversionFailure {
-        override val diagnostic: ExchangeGraphDiagnostic
+        override val diagnostic: ProducerDiagnostic
             get() = ExchangeGraphRule.MOBILE_INPUT_UNCLASSIFIED.at("Record")
     }
 }

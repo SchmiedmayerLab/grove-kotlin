@@ -57,12 +57,8 @@ public class OpaqueIdentityScope private constructor(
         require(components.size == kind.componentCount) {
             "${kind.code} requires exactly ${kind.componentCount} ordered components."
         }
-        components.forEachIndexed { index, component ->
-            val field = "${kind.code}.${kind.components[index]}"
-            if (!ExchangeProtocol.isScalarText(component)) {
-                throw ExchangeIdentityException(ExchangeIdentityError.NonScalarText(field))
-            }
-            if (component.isEmpty()) throw ExchangeIdentityException(ExchangeIdentityError.EmptyComponent(field))
+        kind.components.zip(components).forEach { (name, component) ->
+            componentError("${kind.code}.$name", name, component)?.let { throw ExchangeIdentityException(it) }
         }
         requireDomainSeparation(kind, components.first())
         val preimage = ExchangeProtocol.frameFields(
@@ -76,34 +72,15 @@ public class OpaqueIdentityScope private constructor(
         return RoledIdentifier(BusinessIdentifier(systems.opaque[kind], value), kind.identifierRole)
     }
 
+    /** The identity of one adapter record; its outputs and artifacts extend it. */
     public fun sourceRecord(
         adapterId: String,
         sourceType: String,
         repositoryScope: BusinessIdentifier,
         nativeRecordId: String,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.SOURCE_RECORD,
+    ): SourceRecordIdentity = SourceRecordIdentity(
+        this,
         listOf(adapterId, sourceType, repositoryScope.system.value, repositoryScope.value, nativeRecordId),
-    )
-
-    public fun sourceOutput(
-        adapterId: String,
-        sourceType: String,
-        repositoryScope: BusinessIdentifier,
-        nativeRecordId: String,
-        outputRole: String,
-        outputDiscriminator: String,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.SOURCE_OUTPUT,
-        listOf(
-            adapterId,
-            sourceType,
-            repositoryScope.system.value,
-            repositoryScope.value,
-            nativeRecordId,
-            outputRole,
-            outputDiscriminator,
-        ),
     )
 
     public fun writerRecord(writerApplication: BusinessIdentifier, writerRecordId: String): RoledIdentifier = mint(
@@ -111,74 +88,15 @@ public class OpaqueIdentityScope private constructor(
         listOf(writerApplication.system.value, writerApplication.value, writerRecordId),
     )
 
+    /** The identity of one provider record; its outputs and artifacts extend it. */
     public fun providerRecord(
         providerCode: String,
         sourceType: String,
         providerScope: BusinessIdentifier,
         nativeRecordId: String,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.PROVIDER_RECORD,
+    ): ProviderRecordIdentity = ProviderRecordIdentity(
+        this,
         listOf(providerCode, sourceType, providerScope.system.value, providerScope.value, nativeRecordId),
-    )
-
-    public fun providerOutput(
-        providerCode: String,
-        sourceType: String,
-        providerScope: BusinessIdentifier,
-        nativeRecordId: String,
-        outputRole: String,
-        outputDiscriminator: String,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.PROVIDER_OUTPUT,
-        listOf(
-            providerCode,
-            sourceType,
-            providerScope.system.value,
-            providerScope.value,
-            nativeRecordId,
-            outputRole,
-            outputDiscriminator,
-        ),
-    )
-
-    public fun sourceArtifact(
-        adapterId: String,
-        sourceType: String,
-        repositoryScope: BusinessIdentifier,
-        nativeRecordId: String,
-        formatCode: String,
-        partIndex: Long,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.SOURCE_ARTIFACT,
-        listOf(
-            adapterId,
-            sourceType,
-            repositoryScope.system.value,
-            repositoryScope.value,
-            nativeRecordId,
-            formatCode,
-            partIndex.toString(),
-        ),
-    )
-
-    public fun providerArtifact(
-        providerCode: String,
-        sourceType: String,
-        providerScope: BusinessIdentifier,
-        nativeRecordId: String,
-        formatCode: String,
-        partIndex: Long,
-    ): RoledIdentifier = mint(
-        OpaqueIdentityKind.PROVIDER_ARTIFACT,
-        listOf(
-            providerCode,
-            sourceType,
-            providerScope.system.value,
-            providerScope.value,
-            nativeRecordId,
-            formatCode,
-            partIndex.toString(),
-        ),
     )
 
     public fun sourceContext(
@@ -213,6 +131,14 @@ public class OpaqueIdentityScope private constructor(
     )
 
     override fun toString(): String = "OpaqueIdentityScope(keyId=$keyId, epoch=$epoch)"
+
+    private fun componentError(field: String, name: String, component: String): ExchangeIdentityError? = when {
+        !ExchangeProtocol.isScalarText(component) -> ExchangeIdentityError.NonScalarText(field)
+        component.isEmpty() -> ExchangeIdentityError.EmptyComponent(field)
+        name in ExchangeContract.unsignedDecimalComponents && !ExchangeProtocol.unsignedDecimal.matches(component) ->
+            ExchangeIdentityError.NonCanonicalPartIndex(field)
+        else -> null
+    }
 
     private fun requireDomainSeparation(kind: OpaqueIdentityKind, firstComponent: String) {
         when (kind) {

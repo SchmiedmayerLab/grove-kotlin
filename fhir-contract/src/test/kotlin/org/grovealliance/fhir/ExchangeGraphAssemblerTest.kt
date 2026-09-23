@@ -13,10 +13,13 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.grovealliance.fhir.ConformanceFixtures.applyPatch
+import org.hl7.fhir.r4.model.Attachment
 import org.hl7.fhir.r4.model.CodeableConcept
 import org.hl7.fhir.r4.model.Coding
 import org.hl7.fhir.r4.model.DateTimeType
 import org.hl7.fhir.r4.model.Device
+import org.hl7.fhir.r4.model.DocumentReference
+import org.hl7.fhir.r4.model.Enumerations
 import org.hl7.fhir.r4.model.Identifier
 import org.hl7.fhir.r4.model.InstantType
 import org.hl7.fhir.r4.model.Observation
@@ -28,6 +31,7 @@ import org.hl7.fhir.r4.model.ResearchStudy
 import org.hl7.fhir.r4.model.ResearchSubject
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.security.MessageDigest
 import java.time.Instant
 
 /** Assembles one active graph and its retraction the way an adapter does, then reads both back. */
@@ -102,7 +106,6 @@ class ExchangeGraphAssemblerTest {
         ).inOrder()
         assertThat(devices.filter { it.hasParent() }.map { it.parent.reference }.distinct()).containsExactly(assembler.hostEntry.fullUrl)
         assertThat(graph.json).doesNotContain("watch-unit-token-001")
-        assertThat(identifiers.sourceAuthorSnapshot).isEqualTo(assembler.gatewayApplicationEntry?.identifier)
         assertThat(identifiers.recordingDeviceSnapshot).isEqualTo(assembler.recordingDeviceEntry?.identifier)
         assertThat(identifiers.provenance.identifier.value).startsWith("n0:conversion-provenance:0:")
 
@@ -148,12 +151,64 @@ class ExchangeGraphAssemblerTest {
         assertThat(bundle.entry.map { it.resource.fhirType() }).containsExactly("Device", "Device", "Observation", "Provenance").inOrder()
         assertThat(observation.subject.hasReference()).isFalse()
         assertThat(observation.subject.type).isEqualTo("Patient")
-        assertThat(observation.subject.identifier.value).isEqualTo("participant-001")
+        assertThat(BusinessIdentifier.from(observation.subject.identifier)).isEqualTo(assembler.context.subject.identifier)
         assertThat(observation.hasDevice()).isFalse()
         assertThat(observation.hasExtension(ExchangeContract.GATEWAY_DEVICE_EXTENSION)).isFalse()
         assertThat(identifiers.recordingDeviceSnapshot).isNull()
-        assertThat(identifiers.sourceAuthorSnapshot).isNull()
+        assertThat(identifiers.writerSnapshot).isNull()
         assertThat(bundle.id).isNull()
+    }
+
+    @Test
+    fun `a gateway application is a second application snapshot that is neither the writer nor a repository node`() {
+        val context = ConformanceFixtures.eventContext(
+            sequence = 51,
+            converterRole = ConverterRole.GatewayApplication(
+                ApplicationDevice(name = "Wearable Companion", packageName = "com.example.wearable", version = "4.0"),
+            ),
+            repositoryIds = mapOf(ExchangeGraphNode.APPLICATION_DEVICE to RepositoryId("application-51")),
+        )
+        val assembler = ExchangeGraphAssembler(context, ADAPTER, null)
+        val (graph, identifiers) = heartRate(assembler)
+        val resources = graph.toBundle().entry.associate { it.fullUrl to it.resource }
+
+        assertThat(resources.getValue(assembler.applicationEntry.fullUrl).idElement.idPart).isEqualTo("application-51")
+        assertThat(resources.getValue(requireNotNull(assembler.gatewayApplicationEntry).fullUrl).hasId()).isFalse()
+        assertThat(identifiers.writerSnapshot).isNull()
+        assertThat(identifiers.writerHostSnapshot).isNull()
+    }
+
+    @Test
+    fun `every repository id lands on the resource of its node`() {
+        val ids = ExchangeGraphNode.entries.associateWith { RepositoryId(it.name.lowercase().replace('_', '-')) }
+        val context = ConformanceFixtures.eventContext(sequence = 52, repositoryIds = ids)
+        val assembler = ExchangeGraphAssembler(context, ADAPTER, RecordingDevice("unit-52"))
+        val sourceRecord = context.identityScope.sourceRecord(ADAPTER, "HeartRateRecord", context.repositoryScope, "record-heart-052")
+        val output = sourceRecord.output("sample", "0")
+        val primary = GraphEntry(output, heartRateObservation(sourceRecord.identifier, output).also(assembler::decorate))
+        val artifact = recordingDocument(sourceRecord)
+        val outputs = listOf(assembler.primaryOutput(primary), assembler.sourceArtifact(artifact))
+        val provenance = assembler.conversionProvenance(
+            profile = ExchangeContract.MOBILE_CONVERSION_PROVENANCE_PROFILE,
+            sourceRecord = sourceRecord.identifier,
+            outputs = outputs,
+            occurred = DateTimeType("2026-08-20T08:30:00.251-07:00"),
+        )
+        val bundle = assembler.activeGraph(outputs, provenance).toBundle()
+        fun id(entry: GraphEntry) = bundle.entry.single { it.fullUrl == entry.fullUrl }.resource.idElement.idPart
+
+        val landed = mapOf(
+            ExchangeGraphNode.BUNDLE to bundle.idElement.idPart,
+            ExchangeGraphNode.PRIMARY_OUTPUT to id(primary),
+            ExchangeGraphNode.SOURCE_ARTIFACT to id(artifact),
+            ExchangeGraphNode.RECORDING_DEVICE to id(requireNotNull(assembler.recordingDeviceEntry)),
+            ExchangeGraphNode.APPLICATION_DEVICE to id(assembler.applicationEntry),
+            ExchangeGraphNode.HOST_DEVICE to id(assembler.hostEntry),
+            ExchangeGraphNode.PROVENANCE to bundle.entry.single { it.resource is Provenance }.resource.idElement.idPart,
+        )
+        assertThat(landed).isEqualTo(ids.filterKeys { it in landed }.mapValues { it.value.value })
+        // No Kotlin adapter emits the writer's own Device snapshots, so those two nodes have no resource here.
+        assertThat(ids.keys - landed.keys).containsExactly(ExchangeGraphNode.WRITER, ExchangeGraphNode.WRITER_HOST)
     }
 
     @Test
@@ -232,43 +287,60 @@ class ExchangeGraphAssemblerTest {
         }
     }
 
+    private fun heartRateObservation(sourceRecord: RoledIdentifier, output: RoledIdentifier): Observation = Observation().apply {
+        meta.addProfile("${ExchangeContract.MOBILE_BASE}/StructureDefinition/grove-mobile-heart-rate")
+        addIdentifier(sourceRecord.toFhir())
+        addIdentifier(output.toFhir())
+        status = Observation.ObservationStatus.FINAL
+        addCategory(CodeableConcept(Coding("http://terminology.hl7.org/CodeSystem/observation-category", "vital-signs", "Vital Signs")))
+        code = CodeableConcept(Coding("http://loinc.org", "8867-4", "Heart rate"))
+        effective = DateTimeType("2026-08-20T08:30:00.251-07:00")
+        issuedElement = InstantType("2026-08-20T17:30:02Z")
+        value = Quantity().setValue(72).setSystem("http://unitsofmeasure.org").setCode("/min").setUnit("beats/minute")
+    }
+
+    private fun recordingDocument(sourceRecord: SourceRecordIdentity): GraphEntry {
+        val output = sourceRecord.output("recording", "0")
+        val payload = "time,bpm\n2026-08-20T15:30:00.251Z,72\n".toByteArray()
+        val document = DocumentReference().apply {
+            meta.addProfile("https://grovealliance.org/fhir/sensor/StructureDefinition/grove-sensor-recording-document")
+            addIdentifier(sourceRecord.identifier.toFhir())
+            addIdentifier(output.toFhir())
+            addIdentifier(sourceRecord.artifact("heart-rate-samples", 0).toFhir())
+            status = Enumerations.DocumentReferenceStatus.CURRENT
+            addContent().apply {
+                format = Coding(ExchangeContract.RECORDING_FORMAT_SYSTEM, "heart-rate-samples", null)
+                attachment = Attachment().apply {
+                    contentType = "text/csv"
+                    data = payload
+                    size = payload.size
+                    hash = MessageDigest.getInstance("SHA-1").digest(payload)
+                }
+            }
+        }
+        return GraphEntry(output, document)
+    }
+
     private fun heartRate(
         assembler: ExchangeGraphAssembler,
         mutate: (Observation) -> Unit = {},
     ): Pair<ExchangeGraph, ExchangeGraphIdentifiers> {
         val context = assembler.context
-        val scope = context.identityScope
-        val sourceRecord = scope.sourceRecord(ADAPTER, "HeartRateRecord", context.repositoryScope, "record-heart-001")
-        val output = scope.sourceOutput(
-            ADAPTER,
-            "HeartRateRecord",
-            context.repositoryScope,
-            "record-heart-001",
-            "sample",
-            "2026-08-20T15:30:00.251000000Z|0",
-        )
-        val observation = Observation().apply {
-            meta.addProfile("${ExchangeContract.MOBILE_BASE}/StructureDefinition/grove-mobile-heart-rate")
-            addIdentifier(sourceRecord.toFhir())
-            addIdentifier(output.toFhir())
-            status = Observation.ObservationStatus.FINAL
-            addCategory(CodeableConcept(Coding("http://terminology.hl7.org/CodeSystem/observation-category", "vital-signs", "Vital Signs")))
-            code = CodeableConcept(Coding("http://loinc.org", "8867-4", "Heart rate"))
-            effective = DateTimeType("2026-08-20T08:30:00.251-07:00")
-            issuedElement = InstantType("2026-08-20T17:30:02Z")
-            value = Quantity().setValue(72).setSystem("http://unitsofmeasure.org").setCode("/min").setUnit("beats/minute")
+        val sourceRecord = context.identityScope.sourceRecord(ADAPTER, "HeartRateRecord", context.repositoryScope, "record-heart-001")
+        val output = sourceRecord.output("sample", "2026-08-20T15:30:00.251000000Z|0")
+        val observation = heartRateObservation(sourceRecord.identifier, output).apply {
             assembler.decorate(this)
             mutate(this)
         }
         val entry = GraphEntry(output, observation)
         val provenance = assembler.conversionProvenance(
             profile = ExchangeContract.MOBILE_CONVERSION_PROVENANCE_PROFILE,
-            sourceRecord = sourceRecord,
+            sourceRecord = sourceRecord.identifier,
             outputs = listOf(entry),
             occurred = DateTimeType("2026-08-20T08:30:00.251-07:00"),
         )
         val graph = assembler.activeGraph(listOf(entry), provenance)
-        return graph to assembler.identifiers(sourceRecord, output, emptyList())
+        return graph to assembler.identifiers(sourceRecord.identifier, output, emptyList())
     }
 
     private companion object {

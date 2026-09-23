@@ -10,22 +10,27 @@ package org.grovealliance.health.fhir
 import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.ExerciseLap
 import androidx.health.connect.client.records.ExerciseSegment
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.Mass
 import com.google.common.truth.Truth.assertThat
 import org.grovealliance.fhir.ApplicationDevice
 import org.grovealliance.fhir.BusinessIdentifier
 import org.grovealliance.fhir.ConverterRole
 import org.grovealliance.fhir.ExchangeContract
 import org.grovealliance.fhir.ExchangeGraph
-import org.grovealliance.fhir.ExchangeGraphDiagnostic
 import org.grovealliance.fhir.ExchangeGraphKind
+import org.grovealliance.fhir.ExchangeGraphNode
 import org.grovealliance.fhir.ExchangeGraphParseResult
 import org.grovealliance.fhir.ExchangeGraphRule
 import org.grovealliance.fhir.GovernedSourceIdentifierDisclosurePolicy
 import org.grovealliance.fhir.GroveIdentifierRole
 import org.grovealliance.fhir.IdentifierSystem
+import org.grovealliance.fhir.ProducerDiagnostic
 import org.grovealliance.fhir.RecordingDevice
+import org.grovealliance.fhir.RepositoryId
 import org.grovealliance.fhir.RetractionEvent
 import org.grovealliance.fhir.RetractionTarget
 import org.grovealliance.fhir.RetractionTargetRole
@@ -36,11 +41,14 @@ import org.hl7.fhir.r4.model.Device
 import org.hl7.fhir.r4.model.Observation
 import org.hl7.fhir.r4.model.Provenance
 import org.hl7.fhir.r4.model.Reference
+import org.hl7.fhir.r4.model.ResourceType
 import org.hl7.fhir.r4.model.Specimen
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.Locale
+import androidx.health.connect.client.records.metadata.Device as HealthConnectDevice
 
 /** Converts representative records and reads the exchange graphs back the way a receiver would. */
 class HealthConnectConverterTest {
@@ -64,14 +72,12 @@ class HealthConnectConverterTest {
         val roles = observation.identifier.mapNotNull(RoledIdentifier::from).map { it.role }
         assertThat(roles).containsExactly(GroveIdentifierRole.SOURCE_RECORD, GroveIdentifierRole.SOURCE_OUTPUT)
         assertThat(conversion.identifiers.primaryOutput).isEqualTo(
-            fixtures.scope.sourceOutput(
+            fixtures.scope.sourceRecord(
                 adapterId = HealthConnectContract.ADAPTER_ID,
                 sourceType = "StepsRecord",
                 repositoryScope = fixtures.repositoryScope,
                 nativeRecordId = "fixture-step",
-                outputRole = "single",
-                outputDiscriminator = "step-count",
-            ),
+            ).output(role = "single", discriminator = "step-count"),
         )
         assertThat(conversion.identifiers.childOutputs).isEmpty()
         assertThat(observation.subject.identifier.value).isEqualTo("participant-001")
@@ -135,7 +141,7 @@ class HealthConnectConverterTest {
         val stale = converter.convert(records.steps(), fixtures.context(conversionInstant = Instant.parse("2026-08-19T17:00:00Z")))
         val failure = (stale as HealthConnectConversionResult.Failed).failure as HealthConnectConversionFailure.InvalidValue
         assertThat(failure.reason).isEqualTo(HealthConnectValueFailure.ConversionInstantPrecedesSourceVersion("Metadata.lastModifiedTime"))
-        assertThat(failure.diagnostic.severity).isEqualTo(ExchangeGraphDiagnostic.Severity.ERROR)
+        assertThat(failure.diagnostic.severity).isEqualTo(ProducerDiagnostic.Severity.ERROR)
         assertThat(ExchangeGraphRule.entries.map { it.code }).contains(failure.diagnostic.code)
 
         val unknownSpecimen = converter.convert(
@@ -158,7 +164,8 @@ class HealthConnectConverterTest {
         assertThat(specimen.meta.profile.single().value).isEqualTo(HealthConnectContract.HEALTH_CONNECT_SPECIMEN_PROFILE)
         val mealContext = observation.getExtensionByUrl(HealthConnectContract.HEALTH_CONNECT_GLUCOSE_MEAL_CONTEXT)
         assertThat(mealContext.extension).hasSize(2)
-        assertThat(conversion.graph.outputTargets().map { it.resourceType }).containsExactly("Observation", "Specimen")
+        assertThat(conversion.graph.outputTargets().map { it.resourceType })
+            .containsExactly(ResourceType.Observation, ResourceType.Specimen)
         assertThat(conversion.graph.retractionTargets().map { it.role }).contains(RetractionTargetRole.DEVICE_SNAPSHOT)
     }
 
@@ -174,9 +181,9 @@ class HealthConnectConverterTest {
         val withDevice = fixtures.converted(records.exercise())
         val warning = withDevice.warnings.single()
         assertThat(warning).isInstanceOf(HealthConnectConversionWarning.RecordingDeviceOmitted::class.java)
-        assertThat(warning.diagnostic.severity).isEqualTo(ExchangeGraphDiagnostic.Severity.WARNING)
+        assertThat(warning.diagnostic.severity).isEqualTo(ProducerDiagnostic.Severity.WARNING)
         assertThat(warning.diagnostic.location).isEqualTo("Observation.device")
-        val warningRules = ExchangeGraphRule.entries.filter { it.severity == ExchangeGraphDiagnostic.Severity.WARNING }
+        val warningRules = ExchangeGraphRule.entries.filter { it.severity == ProducerDiagnostic.Severity.WARNING }
         assertThat(warningRules).containsExactly(
             ExchangeGraphRule.MOBILE_OMISSION_RECORDING_DEVICE,
             ExchangeGraphRule.MOBILE_OMISSION_SOURCE_OFFSET,
@@ -184,11 +191,40 @@ class HealthConnectConverterTest {
         )
         assertThat(
             listOf(
-                HealthConnectConversionWarning.RecordingDeviceOmitted("x").diagnostic.code,
+                HealthConnectConversionWarning.RecordingDeviceOmitted(null).diagnostic.code,
                 HealthConnectConversionWarning.SourceOffsetUnavailable("x").diagnostic.code,
-                HealthConnectConversionWarning.UnmodeledMetadataWithheld(setOf("x")).diagnostic.code,
+                HealthConnectConversionWarning.UnmodeledMetadataWithheld(listOf("x")).diagnostic.code,
             ),
         ).containsExactlyElementsIn(warningRules.map { it.code }).inOrder()
+    }
+
+    @Test
+    fun `warning payloads name the device the effective elements and the sorted withheld keys`() {
+        val unnamed = HealthConnectDevice(type = HealthConnectDevice.TYPE_WATCH)
+        val anonymous = WeightRecord(
+            time = records.instant,
+            zoneOffset = ZoneOffset.UTC,
+            weight = Mass.kilograms(72.5),
+            metadata = fixtures.metadata("fixture-anonymous", base = Metadata.autoRecorded(unnamed)),
+        )
+        assertThat(fixtures.converted(anonymous).warnings).containsExactly(HealthConnectConversionWarning.RecordingDeviceOmitted(null))
+
+        val unzoned = StepsRecord(
+            startTime = records.instant,
+            startZoneOffset = null,
+            endTime = records.end,
+            endZoneOffset = null,
+            count = 1,
+            metadata = fixtures.metadata("fixture-unzoned"),
+        )
+        val offsets = fixtures.converted(unzoned).warnings.filterIsInstance<HealthConnectConversionWarning.SourceOffsetUnavailable>()
+        assertThat(offsets.map { it.field })
+            .containsExactly("Observation.effectivePeriod.start", "Observation.effectivePeriod.end").inOrder()
+        assertThat(offsets.map { it.diagnostic.location }).containsExactlyElementsIn(offsets.map { it.field }).inOrder()
+
+        val withheld = fixtures.converted(records.nutrition()).warnings
+            .filterIsInstance<HealthConnectConversionWarning.UnmodeledMetadataWithheld>().single()
+        assertThat(withheld.keys).containsExactly("NutritionRecord.mealType", "NutritionRecord.name").inOrder()
     }
 
     @Test
@@ -203,6 +239,49 @@ class HealthConnectConverterTest {
         assertThat(conversion.identifiers.recordingDeviceSnapshot).isNotNull()
         assertThat(conversion.graph.json).doesNotContain("watch-unit-token-001")
         assertThat(conversion.warnings).isEmpty()
+    }
+
+    @Test
+    fun `every repository id a Health Connect graph carries lands on its node and nowhere else`() {
+        val nodes = listOf(
+            ExchangeGraphNode.BUNDLE,
+            ExchangeGraphNode.PRIMARY_OUTPUT,
+            ExchangeGraphNode.RECORDING_DEVICE,
+            ExchangeGraphNode.APPLICATION_DEVICE,
+            ExchangeGraphNode.HOST_DEVICE,
+            ExchangeGraphNode.PROVENANCE,
+        )
+        val ids = nodes.associateWith { RepositoryId(it.name.lowercase().replace('_', '-')) }
+        val options = HealthConnectConversionOptions(recordingDevice = { RecordingDevice("watch-unit-token-001") })
+        val conversion = fixtures.converted(records.heartRate(), fixtures.context(options = options, repositoryIds = ids))
+        val bundle = conversion.toBundle()
+        val identifiers = conversion.identifiers
+        fun id(node: RoledIdentifier?) = bundle.entry.single { it.fullUrl == node?.fullUrl }.resource.idElement.idPart
+
+        val landed = mapOf(
+            ExchangeGraphNode.BUNDLE to bundle.idElement.idPart,
+            ExchangeGraphNode.PRIMARY_OUTPUT to id(identifiers.primaryOutput),
+            ExchangeGraphNode.RECORDING_DEVICE to id(identifiers.recordingDeviceSnapshot),
+            ExchangeGraphNode.APPLICATION_DEVICE to id(identifiers.applicationSnapshot),
+            ExchangeGraphNode.HOST_DEVICE to id(identifiers.hostSnapshot),
+            ExchangeGraphNode.PROVENANCE to id(identifiers.provenance),
+        )
+        assertThat(landed).isEqualTo(ids.mapValues { it.value.value })
+        assertThat(identifiers.childOutputs).isNotEmpty()
+        assertThat(bundle.entry.count { it.resource.hasId() }).isEqualTo(nodes.size - 1)
+    }
+
+    @Test
+    fun `a repository id for a node the graph cannot carry is refused`() {
+        listOf(ExchangeGraphNode.WRITER, ExchangeGraphNode.WRITER_HOST, ExchangeGraphNode.SOURCE_ARTIFACT).forEach { node ->
+            assertThrows(IllegalArgumentException::class.java) { fixtures.context(repositoryIds = mapOf(node to RepositoryId("node"))) }
+        }
+
+        val context = fixtures.context(repositoryIds = mapOf(ExchangeGraphNode.RECORDING_DEVICE to RepositoryId("watch")))
+        val failure = (converter.convert(records.weight(), context) as HealthConnectConversionResult.Failed).failure
+        assertThat(failure).isEqualTo(HealthConnectConversionFailure.RepositoryIdWithoutNode(ExchangeGraphNode.RECORDING_DEVICE))
+        assertThat(failure.diagnostic.code).isEqualTo(ExchangeGraphRule.MOBILE_INPUT_UNCLASSIFIED.code)
+        assertThat(failure.diagnostic.location).isEqualTo("HealthConnectConversionContext")
     }
 
     @Test
@@ -243,10 +322,11 @@ class HealthConnectConverterTest {
         val context = fixtures.context()
         val conversion = fixtures.converted(records.steps(), context)
         val steps = HealthConnectSourceRecord("fixture-step", HealthConnectSourceType.STEPS)
-        val fromCatalog = converter.retractionTargets(steps, context.event)
+        val fromCatalog = converter.retractionTargets(steps, context)
         assertThat(fromCatalog.map { it.identifier }).containsExactlyElementsIn(conversion.graph.outputTargets().map { it.identifier })
+        assertThat(fromCatalog.map { it.nativeRecordIdentifier }).containsExactly(null)
         assertThrows(IllegalArgumentException::class.java) {
-            converter.retractionTargets(HealthConnectSourceRecord("heart-record", HealthConnectSourceType.HEART_RATE), context.event)
+            converter.retractionTargets(HealthConnectSourceRecord("heart-record", HealthConnectSourceType.HEART_RATE), context)
         }
         val retraction = RetractionEvent(
             targets = fromCatalog,
@@ -257,6 +337,26 @@ class HealthConnectConverterTest {
         val replay = ExchangeGraph.parse(ExchangeGraphKind.RETRACTION, retraction.graph.json)
         assertThat(replay).isInstanceOf(ExchangeGraphParseResult.Valid::class.java)
         assertThat(retraction.graph.toBundle().entry.map { it.resource.fhirType() }).containsExactly("Provenance")
+    }
+
+    @Test
+    fun `catalog retraction targets carry the native record identifier the authorized policy disclosed`() {
+        val system = IdentifierSystem("${HealthConnectTestFixtures.ROOT}/identifiers/health-connect-records")
+        val policy = GovernedSourceIdentifierDisclosurePolicy.Authorized(system)
+        val context = fixtures.context(options = HealthConnectConversionOptions(nativeIdentifierDisclosure = policy))
+        val conversion = fixtures.converted(records.steps(), context)
+        val disclosed = conversion.toBundle().observations().single().identifier.single { it.system == system.value }
+
+        val targets = converter.retractionTargets(HealthConnectSourceRecord("fixture-step", HealthConnectSourceType.STEPS), context)
+        assertThat(targets.map { it.nativeRecordIdentifier }).containsExactly(BusinessIdentifier.from(disclosed))
+        val retraction = RetractionEvent(
+            targets = targets,
+            context = fixtures.context(sequence = 2, options = context.options).event,
+            sourceRecord = conversion.identifiers.sourceRecord,
+            retractedAt = Instant.parse("2026-08-19T18:00:05Z"),
+        )
+        val replay = ExchangeGraph.parse(ExchangeGraphKind.RETRACTION, retraction.graph.json) as ExchangeGraphParseResult.Valid
+        assertThat(replay.graph.retractionTargets()).containsExactlyElementsIn(targets)
     }
 
     @Test
@@ -323,7 +423,10 @@ class HealthConnectConverterTest {
         assertThat(bundle.entry.single { it.fullUrl == study.reference }.resource.fhirType()).isEqualTo("ResearchStudy")
         val gatewayDevice = observation.getExtensionByUrl(ExchangeContract.GATEWAY_DEVICE_EXTENSION).value as Reference
         assertThat(bundle.entry.single { it.fullUrl == gatewayDevice.reference }.resource.fhirType()).isEqualTo("Device")
-        assertThat(conversion.identifiers.sourceAuthorSnapshot).isNotNull()
+        val gatewayApplication = bundle.entry.single { it.fullUrl == gatewayDevice.reference }.resource as Device
+        assertThat(gatewayApplication.meta.profile.single().value).isEqualTo(ExchangeContract.MOBILE_APPLICATION_DEVICE_PROFILE)
+        assertThat(conversion.identifiers.writerSnapshot).isNull()
+        assertThat(conversion.identifiers.writerHostSnapshot).isNull()
         val replay = ExchangeGraph.parse(ExchangeGraphKind.ACTIVE, conversion.graph.json)
         assertThat(replay).isInstanceOf(ExchangeGraphParseResult.Valid::class.java)
     }
@@ -335,7 +438,7 @@ class HealthConnectConverterTest {
         assertThat(observations.map { it.code.codingFirstRep.code.lowercase(Locale.ROOT) }).hasSize(3)
         assertThat(conversion.identifiers.childOutputs).hasSize(2)
         assertThat(conversion.warnings).contains(
-            HealthConnectConversionWarning.UnmodeledMetadataWithheld(setOf("NutritionRecord.name", "NutritionRecord.mealType")),
+            HealthConnectConversionWarning.UnmodeledMetadataWithheld(listOf("NutritionRecord.mealType", "NutritionRecord.name")),
         )
     }
 
