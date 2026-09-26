@@ -11,6 +11,10 @@ plugins {
 
 android {
     namespace = "org.grovealliance.firebase"
+
+    // `FirebaseOptions.Builder` validates its arguments through `android.text.TextUtils`, which the
+    // unit-test android.jar only stubs out. Without this, building options throws "not mocked".
+    testOptions.unitTests.isReturnDefaultValues = true
 }
 
 dependencies {

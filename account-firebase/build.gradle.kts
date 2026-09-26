@@ -22,4 +22,6 @@ dependencies {
     implementation(project(":core-coroutines"))
     implementation(project(":resources"))
     implementation(libs.googleid)
+
+    testImplementation(project(":testing-core"))
 }
