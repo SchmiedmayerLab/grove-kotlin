@@ -12,6 +12,7 @@ import org.grovealliance.foundation.KnowledgeSource
 import org.grovealliance.ui.StringResource
 import org.grovealliance.ui.account.DataDisplayComposable
 import org.grovealliance.ui.account.DataEntryComposable
+import java.time.Instant
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 
@@ -79,6 +80,15 @@ val AnyAccountKey.isRequired: Boolean
  */
 val AnyAccountKey.isHiddenCredential: Boolean
     get() = this == AccountKeys.accountId || this == AccountKeys.userId
+
+/**
+ * Whether [value] is the [Instant] sentinel this key carries while nothing has been chosen for it.
+ *
+ */
+fun AnyAccountKey.holdsUnrepresentableInstant(value: Any): Boolean {
+    val initial = initialValue
+    return value is Instant && initial is InitialValue.Empty && initial.value == value
+}
 
 /**
  * A type alias for an AccountKey with any type of data.

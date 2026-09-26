@@ -21,6 +21,8 @@ import org.grovealliance.account.AccountDetailsCodecConfig
 import org.grovealliance.account.AccountKey
 import org.grovealliance.account.AccountKeys
 import org.grovealliance.account.AnyAccountKey
+import org.grovealliance.account.accountLogger
+import org.grovealliance.account.holdsUnrepresentableInstant
 import org.grovealliance.account.keys
 import org.grovealliance.core.Module
 import org.grovealliance.core.dependency
@@ -30,6 +32,7 @@ import java.time.Instant
 @Suppress("UNCHECKED_CAST")
 internal class FirestoreAccountDetailsCodec : Module {
     private val codecConfig by dependency<AccountDetailsCodecConfig>()
+    private val logger by accountLogger()
 
     fun encode(details: AccountDetails): Map<String, Any?> {
         return buildMap {
@@ -37,10 +40,18 @@ internal class FirestoreAccountDetailsCodec : Module {
                 if (key.identifier == AccountKeys.accountId.identifier) return@forEach
                 val typedKey = key as AccountKey<Any>
                 val value = details.getAnyOrNull(typedKey::class) ?: return@forEach
+                if (typedKey.holdsUnrepresentableInstant(value)) return@forEach
+
+                // One field that cannot be encoded must not cost the whole document: this map is
+                // written as a single merge, so throwing here would drop every other detail with it.
+                val encoded = runCatching { encodeValue(typedKey, value) }.getOrElse { throwable ->
+                    logger.e(throwable) { "Dropping '${typedKey.identifier}', which could not be encoded." }
+                    return@forEach
+                }
 
                 put(
                     key = codecConfig.encodingIdentifier(typedKey),
-                    value = encodeValue(typedKey, value),
+                    value = encoded,
                 )
             }
         }

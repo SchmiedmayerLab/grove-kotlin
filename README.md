@@ -31,6 +31,7 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | [`core-logging`](core-logging/) | The logger every module writes through. |
 | [`core-time`](core-time/) | Clocks and date handling that tests can drive. |
 | [`core-viewmodel`](core-viewmodel/) | ViewModel plumbing shared across features. |
+| [`firebase`](firebase/) | Initialization of the default Firebase app, eager or deferred. |
 | [`foundation`](foundation/) | Serialization and shared data types. |
 | [`resources`](resources/) | Android resources shared between modules. |
 
