@@ -184,6 +184,15 @@ internal class FirebaseAccountServiceImpl(
                 .onFailure { logger.e { "Failed to send email verification: ${it.message}" } }
         }
 
+        // `name` is one of SUPPORTED_KEYS, so it is deliberately excluded from the external details
+        // below and this is the only place sign-up can persist it. Without it a participant's name
+        // is silently dropped and only reappears if they later edit it.
+        signupDetails.getOrNull(AccountKeys.name::class)?.let { name ->
+            val request = userProfileChangeRequest { displayName = name.fullName }
+            runCatching { currentFirebaseUser?.updateProfile(request)?.awaitVoid() }
+                .onFailure { logger.e(it) { "Failed to set the display name during sign up: ${it.message}" } }
+        }
+
         val externalDetails = signupDetails.copy().apply { removeAll(SUPPORTED_KEYS) }
         val accountId = currentFirebaseUser?.uid
         if (externalDetails.isNotEmpty && accountId != null) {
