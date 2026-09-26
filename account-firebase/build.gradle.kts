@@ -15,10 +15,13 @@ android {
 
 dependencies {
     api(project(":account"))
+    api(project(":firebase"))
     api(libs.firebase.auth.ktx)
     api(libs.firebase.firestore.ktx)
 
     implementation(project(":core-coroutines"))
     implementation(project(":resources"))
     implementation(libs.googleid)
+
+    testImplementation(project(":testing-core"))
 }

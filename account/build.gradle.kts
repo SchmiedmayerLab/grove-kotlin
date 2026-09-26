@@ -27,4 +27,6 @@ dependencies {
     implementation(project(":core-coroutines"))
     implementation(project(":core-lifecycle"))
     implementation(project(":storage-local"))
+
+    testImplementation(project(":testing-core"))
 }
