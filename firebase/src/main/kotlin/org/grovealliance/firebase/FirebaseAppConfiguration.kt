@@ -21,12 +21,12 @@ import org.grovealliance.firebase.internal.FirebaseAppConfigurationImpl
  *
  * ## Eager configuration
  *
- * When the [FirebaseOptions] are known at configuration time, pass them in and the app is
- * initialized during Grove's start-up:
+ * When the [FirebaseOptions] are known at start-up, resolve them, from the app's own components if
+ * needed, and the app is initialized during Grove's start-up:
  *
  * ```kotlin
  * override val configuration = Configuration {
- *     firebaseApp(options = myOptions)
+ *     firebaseApp(options = { dependency<RegionStore>().persistedOptions() })
  * }
  * ```
  *

@@ -10,5 +10,79 @@ SPDX-License-Identifier: MIT
 -->
 
 <resources>
+    <!-- Cardinal Red -->
+    <color name="cardinal_red_primary">#FFFFB3B2</color>
+    <color name="cardinal_red_on_primary">#FF680019</color>
+    <color name="cardinal_red_primary_container">#FF920027</color>
+    <color name="cardinal_red_on_primary_container">#FFFFDAD9</color>
+    <color name="cardinal_red_inverse_primary">#FFBF0036</color>
+    <color name="cardinal_red_secondary">#FFEEBAB9</color>
+    <color name="cardinal_red_on_secondary">#FF4C2526</color>
+    <color name="cardinal_red_secondary_container">#FF653B3C</color>
+    <color name="cardinal_red_on_secondary_container">#FFFFDAD9</color>
+    <color name="cardinal_red_tertiary">#FFFCB977</color>
+    <color name="cardinal_red_on_tertiary">#FF492900</color>
+    <color name="cardinal_red_tertiary_container">#FF6A3C00</color>
+    <color name="cardinal_red_on_tertiary_container">#FFFFDCBE</color>
+    <color name="cardinal_red_error">#FFFFB4AB</color>
+    <color name="cardinal_red_on_error">#FF690005</color>
+    <color name="cardinal_red_error_container">#FF93000A</color>
+    <color name="cardinal_red_on_error_container">#FFFFDAD6</color>
     <color name="cardinal_red_background">#FF171512</color>
+    <color name="cardinal_red_on_background">#FFE4E2DF</color>
+    <color name="cardinal_red_surface">#FF171512</color>
+    <color name="cardinal_red_on_surface">#FFE4E2DF</color>
+    <color name="cardinal_red_surface_variant">#FF4A463E</color>
+    <color name="cardinal_red_on_surface_variant">#FFA7A39A</color>
+    <color name="cardinal_red_surface_tint">#FFFFB3B2</color>
+    <color name="cardinal_red_inverse_surface">#FFE4E2DF</color>
+    <color name="cardinal_red_inverse_on_surface">#FF363532</color>
+    <color name="cardinal_red_outline">#FF959087</color>
+    <color name="cardinal_red_outline_variant">#FF4A463E</color>
+    <color name="cardinal_red_scrim">#FF000000</color>
+    <color name="cardinal_red_surface_bright">#FF3A3936</color>
+    <color name="cardinal_red_surface_dim">#FF171512</color>
+    <color name="cardinal_red_surface_container_lowest">#FF100E0A</color>
+    <color name="cardinal_red_surface_container_low">#FF1D1B19</color>
+    <color name="cardinal_red_surface_container">#FF211F1D</color>
+    <color name="cardinal_red_surface_container_high">#FF2B2A27</color>
+    <color name="cardinal_red_surface_container_highest">#FF363532</color>
+
+    <!-- Accent Blue -->
+    <color name="accent_blue_primary">#FFCFBCFF</color>
+    <color name="accent_blue_on_primary">#FF28217C</color>
+    <color name="accent_blue_primary_container">#FF453796</color>
+    <color name="accent_blue_on_primary_container">#FFE8DDFF</color>
+    <color name="accent_blue_inverse_primary">#FF453796</color>
+    <color name="accent_blue_secondary">#FFCBC2DF</color>
+    <color name="accent_blue_on_secondary">#FF332D44</color>
+    <color name="accent_blue_secondary_container">#FF4A435B</color>
+    <color name="accent_blue_on_secondary_container">#FFE7DEFC</color>
+    <color name="accent_blue_tertiary">#FF64DAC5</color>
+    <color name="accent_blue_on_tertiary">#FF003830</color>
+    <color name="accent_blue_tertiary_container">#FF005046</color>
+    <color name="accent_blue_on_tertiary_container">#FF82F6E1</color>
+    <color name="accent_blue_error">#FFFFB4AB</color>
+    <color name="accent_blue_on_error">#FF690005</color>
+    <color name="accent_blue_error_container">#FF93000A</color>
+    <color name="accent_blue_on_error_container">#FFFFDAD6</color>
+    <color name="accent_blue_background">#FF141317</color>
+    <color name="accent_blue_on_background">#FFE3E2E7</color>
+    <color name="accent_blue_surface">#FF141317</color>
+    <color name="accent_blue_on_surface">#FFE3E2E7</color>
+    <color name="accent_blue_surface_variant">#FF484550</color>
+    <color name="accent_blue_on_surface_variant">#FFC9C4D1</color>
+    <color name="accent_blue_surface_tint">#FFCFBCFF</color>
+    <color name="accent_blue_inverse_surface">#FFE3E2E7</color>
+    <color name="accent_blue_inverse_on_surface">#FF313034</color>
+    <color name="accent_blue_outline">#FF938F9B</color>
+    <color name="accent_blue_outline_variant">#FF484550</color>
+    <color name="accent_blue_scrim">#FF000000</color>
+    <color name="accent_blue_surface_bright">#FF3A383D</color>
+    <color name="accent_blue_surface_dim">#FF141317</color>
+    <color name="accent_blue_surface_container_lowest">#FF0F0D13</color>
+    <color name="accent_blue_surface_container_low">#FF1C1B1F</color>
+    <color name="accent_blue_surface_container">#FF201F23</color>
+    <color name="accent_blue_surface_container_high">#FF2B292D</color>
+    <color name="accent_blue_surface_container_highest">#FF353438</color>
 </resources>

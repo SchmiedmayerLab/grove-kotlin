@@ -31,7 +31,7 @@ sealed interface StringResource {
         @StringRes private val id: Int,
         private val args: List<Any>,
     ) : StringResource {
-        override fun get(context: Context): String = context.getString(id, *args.toTypedArray())
+        override fun get(context: Context): String = context.getString(id, *args.resolved(context))
     }
 
     @Immutable
@@ -41,7 +41,7 @@ sealed interface StringResource {
         private val args: List<Any>,
     ) : StringResource {
         override fun get(context: Context): String =
-            context.resources.getQuantityString(id, quantity, *args.toTypedArray())
+            context.resources.getQuantityString(id, quantity, *args.resolved(context))
     }
 
     @Immutable
@@ -59,6 +59,10 @@ sealed interface StringResource {
     fun text(): String = get(LocalContext.current)
 
     companion object {
+        /**
+         * A string from a string resource, formatted with [args]. An argument that is itself a
+         * [StringResource] is formatted as its text.
+         */
         operator fun invoke(@StringRes id: Int, vararg args: Any): StringResource =
             ContextStringResource(id, args.toList())
 
@@ -77,3 +81,6 @@ sealed interface StringResource {
             )
     }
 }
+
+private fun List<Any>.resolved(context: Context): Array<Any> =
+    map { argument -> (argument as? StringResource)?.get(context) ?: argument }.toTypedArray()

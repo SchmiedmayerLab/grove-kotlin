@@ -9,15 +9,21 @@ package org.grovealliance.health.internal
 
 import androidx.fragment.app.FragmentActivity
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.metadata.DataOrigin
+import androidx.health.connect.client.request.AggregateGroupByDurationRequest
+import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ChangesTokenRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.response.ChangesResponse
 import androidx.health.connect.client.time.TimeRangeFilter
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -27,8 +33,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.grovealliance.core.coroutines.Concurrency
 import org.grovealliance.core.lifecycle.AppLifecycle
+import org.grovealliance.core.time.TimeProvider
+import org.grovealliance.health.AggregationBucket
+import org.grovealliance.health.AggregationInterval
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.CollectionMode
 import org.grovealliance.health.Health
@@ -41,34 +53,42 @@ import org.grovealliance.health.RecordType
 import org.grovealliance.health.healthLogger
 import org.grovealliance.storage.local.LocalStorage
 import java.time.Instant
+import java.time.LocalDateTime
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
 /**
  * The default implementation of [HealthClient] using Health Connect.
  */
 @Suppress("TooManyFunctions")
-internal class DefaultHealthClient(
+internal class DefaultHealthClient @Suppress("detekt:LongParameterList") constructor(
     private val configurations: Set<HealthConfigurationComponent>,
     private val standard: HealthConstraint?,
     concurrency: Concurrency,
     val healthConnectClient: HealthConnectClient,
     private val appLifecycle: AppLifecycle,
+    private val timeProvider: TimeProvider,
     localStorage: LocalStorage,
 ) : HealthClient {
 
+    private val mainDispatcher = concurrency.mainImmediateDispatcher()
     private val mainScope = concurrency.mainImmediateCoroutineScope()
     val ioScope = concurrency.ioCoroutineScope()
     private val permissionController = healthConnectClient.permissionController
-    override val dataAccessRequirements = configurations.fold(HealthDataAccessRequirements()) { acc, component ->
-        acc + component.dataAccessRequirements
-    }
-    private val allRequiredPermissions = with(dataAccessRequirements) {
-        read.map { it.readPermission } + write.map { it.writePermission }
-    }.toSet()
+    private val configuredRequirements = configurations.dataAccessRequirements()
 
     private val logger by healthLogger()
     private val registeredDataCollectors = CopyOnWriteArrayList<HealthDataCollector>()
+
+    private val runtimeConfigurationMutex = Mutex()
+
+    @Volatile
+    private var runtimeComponents: Set<HealthConfigurationComponent> = emptySet()
+
+    override val dataAccessRequirements: HealthDataAccessRequirements
+        get() = configuredRequirements + runtimeComponents.dataAccessRequirements()
+    private val pendingPermissionRequests = CopyOnWriteArrayList<CompletableDeferred<Unit>>()
 
     val changesTokenStore = ChangesTokenStore(storage = localStorage)
 
@@ -95,7 +115,7 @@ internal class DefaultHealthClient(
     override fun onPermissionsGranted(granted: Set<String>) {
         logger.i { "Health permissions granted: $granted" }
         mainScope.launch {
-            updateIsFullyAuthorizedState()
+            endPendingPermissionRequests()
             registeredDataCollectors.forEach { collector ->
                 if (granted.contains(collector.recordType.readPermission)) {
                     startAutomaticDataCollectionIfPossible(collector)
@@ -104,12 +124,47 @@ internal class DefaultHealthClient(
         }
     }
 
-    override fun requestPermissionsIfNeeded(activity: FragmentActivity) {
+    override fun onPermissionRequestAbandoned() {
+        logger.i { "Health permission request ended without a result" }
         mainScope.launch {
-            val neededPermissions = neededPermissions()
-            if (neededPermissions.isNotEmpty()) {
-                startPermissionFlow(activity = activity, permissions = neededPermissions)
+            endPendingPermissionRequests()
+        }
+    }
+
+    override suspend fun requestPermissionsIfNeeded(activity: FragmentActivity): Boolean =
+        requestPermissionsIfNeeded { permissions -> startPermissionFlow(activity = activity, permissions = permissions) }
+
+    /**
+     * Launches the permission flow for every needed permission through [launch], and suspends until the
+     * request ends in [onPermissionsGranted] or [onPermissionRequestAbandoned].
+     *
+     * @return `true` if every needed permission is granted afterwards, `false` otherwise.
+     */
+    internal suspend fun requestPermissionsIfNeeded(launch: (Set<String>) -> Unit): Boolean {
+        val neededPermissions = neededPermissions()
+        if (neededPermissions.isEmpty()) return true
+        val result = CompletableDeferred<Unit>()
+        pendingPermissionRequests.add(result)
+        try {
+            withContext(mainDispatcher) { launch(neededPermissions) }
+            result.await()
+        } finally {
+            pendingPermissionRequests.remove(result)
+        }
+        return neededPermissions().isEmpty()
+    }
+
+    override suspend fun updateRuntimeConfiguration(components: Set<HealthConfigurationComponent>) {
+        runtimeConfigurationMutex.withLock {
+            val previous = runtimeComponents
+            runtimeComponents = components
+            val stillCollected = (configurations + components).collectedRecordTypes()
+            (previous.collectedRecordTypes() - stillCollected).forEach { type ->
+                logger.i { "Stopped collecting ${type.identifier}: no longer configured" }
+                resetCollectors(type)
             }
+            components.forEach { it.configure(client = this, standard = standard) }
+            updateIsFullyAuthorizedState()
         }
     }
 
@@ -131,14 +186,21 @@ internal class DefaultHealthClient(
 
     override fun resetRecordCollection(type: AnyRecordType) {
         ioScope.launch {
-            val collectorsToReset = registeredDataCollectors.filter { it.recordType == type }
-            changesTokenStore.deleteToken(type)
-            collectorsToReset.forEach { collector ->
-                collector.stopDataCollection()
-            }
-            registeredDataCollectors.removeAll(collectorsToReset)
+            resetCollectors(type)
         }
     }
+
+    private suspend fun resetCollectors(type: AnyRecordType) {
+        val collectorsToReset = registeredDataCollectors.filter { it.recordType == type }
+        changesTokenStore.deleteToken(type)
+        collectorsToReset.forEach { collector ->
+            collector.stopDataCollection()
+        }
+        registeredDataCollectors.removeAll(collectorsToReset)
+    }
+
+    private fun Set<HealthConfigurationComponent>.collectedRecordTypes(): Set<AnyRecordType> =
+        filterIsInstance<CollectRecord>().map { it.recordType }.toSet()
 
     override suspend fun insert(record: Record): Boolean {
         val type = RecordType.from(record)
@@ -171,7 +233,8 @@ internal class DefaultHealthClient(
             ReadRecordsRequest(
                 recordType = type.type,
                 timeRangeFilter = TimeRangeFilter.between(timeRange.start, timeRange.end),
-                dataOriginFilter = source?.let { setOf(DataOrigin(it)) } ?: emptySet(),
+                dataOriginFilter = dataOrigins(source),
+                ascendingOrder = sortedBy != QuerySort.BY_START_TIME_DESC,
                 pageSize = limit,
             )
         )
@@ -275,6 +338,94 @@ internal class DefaultHealthClient(
         return response.records.firstOrNull()?.startTime()
     }
 
+    override suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        source: String?,
+    ): T? = readingIfPermitted {
+        healthConnectClient.aggregate(
+            AggregateRequest(
+                metrics = setOf(metric),
+                timeRangeFilter = TimeRangeFilter.between(timeRange.start, timeRange.end),
+                dataOriginFilter = dataOrigins(source),
+            )
+        )[metric]
+    }
+
+    override suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval,
+        source: String?,
+    ): List<AggregationBucket<T>> {
+        require(timeRange.start != Instant.MIN && !timeRange.isOpenEnded) { "timeRange must have a start and an end" }
+        return readingIfPermitted {
+            when (interval) {
+                is AggregationInterval.Fixed -> aggregateByDuration(metric, timeRange, interval, source)
+                is AggregationInterval.Calendar -> aggregateByPeriod(metric, timeRange, interval, source)
+            }
+        }.orEmpty()
+    }
+
+    private suspend fun <T : Any> aggregateByDuration(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval.Fixed,
+        source: String?,
+    ): List<AggregationBucket<T>> = healthConnectClient.aggregateGroupByDuration(
+        AggregateGroupByDurationRequest(
+            metrics = setOf(metric),
+            timeRangeFilter = TimeRangeFilter.between(timeRange.start, timeRange.end),
+            timeRangeSlicer = interval.duration.toJavaDuration(),
+            dataOriginFilter = dataOrigins(source),
+        )
+    ).map { group ->
+        AggregationBucket(
+            start = group.startTime,
+            end = group.endTime,
+            value = group.result[metric],
+        )
+    }
+
+    private suspend fun <T : Any> aggregateByPeriod(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval.Calendar,
+        source: String?,
+    ): List<AggregationBucket<T>> {
+        val zone = timeProvider.currentZone()
+        return healthConnectClient.aggregateGroupByPeriod(
+            AggregateGroupByPeriodRequest(
+                metrics = setOf(metric),
+                timeRangeFilter = TimeRangeFilter.between(
+                    LocalDateTime.ofInstant(timeRange.start, zone),
+                    LocalDateTime.ofInstant(timeRange.end, zone),
+                ),
+                timeRangeSlicer = interval.period,
+                dataOriginFilter = dataOrigins(source),
+            )
+        ).map { group ->
+            AggregationBucket(
+                start = group.startTime.atZone(zone).toInstant(),
+                end = group.endTime.atZone(zone).toInstant(),
+                value = group.result[metric],
+            )
+        }
+    }
+
+    /**
+     * Runs [read], or returns `null` when Health Connect rejects it for lacking a permission, such as
+     * reading the record type, reading history or reading in the background.
+     */
+    private suspend fun <R> readingIfPermitted(read: suspend () -> R): R? = try {
+        read()
+    } catch (error: SecurityException) {
+        logger.w(error) { "Not permitted to read: ${error.message}" }
+        null
+    }
+
+    private fun dataOrigins(source: String?): Set<DataOrigin> = source?.let { setOf(DataOrigin(it)) } ?: emptySet()
+
     override suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean {
         return getGrantedPermissions().contains(type.readPermission)
     }
@@ -283,15 +434,35 @@ internal class DefaultHealthClient(
         return getGrantedPermissions().contains(type.writePermission)
     }
 
-    private suspend fun neededPermissions(): Set<String> {
+    /**
+     * The permissions still to be granted: every read and write permission in [dataAccessRequirements],
+     * plus reading history and, when a collector continues in the background, reading in the
+     * background. The last two are only included where the installed Health Connect supports them,
+     * since they can't be granted otherwise.
+     */
+    internal suspend fun neededPermissions(): Set<String> {
         val permissions = buildSet {
-            addAll(allRequiredPermissions)
-            add(HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY)
-            if (registeredDataCollectors.any { it.deliverySetting.continueInBackground }) {
+            with(dataAccessRequirements) {
+                addAll(read.map { it.readPermission })
+                addAll(write.map { it.writePermission })
+            }
+            if (isFeatureAvailable(HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY)) {
+                add(HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY)
+            }
+            if (registeredDataCollectors.any { it.deliverySetting.continueInBackground } &&
+                isFeatureAvailable(HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND)
+            ) {
                 add(HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
             }
         }
         return (permissions - getGrantedPermissions()).toSet()
+    }
+
+    private fun isFeatureAvailable(feature: Int): Boolean = runCatching {
+        healthConnectClient.features.getFeatureStatus(feature) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+    }.getOrElse {
+        logger.e(it) { "Failed to read the status of Health Connect feature $feature" }
+        false
     }
 
     override suspend fun addHealthDataCollector(collector: HealthDataCollector) {
@@ -351,6 +522,11 @@ internal class DefaultHealthClient(
 
     private fun startPermissionFlow(activity: FragmentActivity, permissions: Set<String>) {
         HealthPermissionFragment.startPermissionFlow(activity = activity, permissions = permissions)
+    }
+
+    private suspend fun endPendingPermissionRequests() {
+        updateIsFullyAuthorizedState()
+        pendingPermissionRequests.forEach { it.complete(Unit) }
     }
 
     private suspend fun updateIsFullyAuthorizedState() {

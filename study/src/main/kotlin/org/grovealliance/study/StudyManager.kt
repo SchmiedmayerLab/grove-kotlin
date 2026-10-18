@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import org.grovealliance.core.Module
 import org.grovealliance.studydefinition.StudyBundle
 import java.time.Instant
+import java.util.Locale
 import java.util.UUID
 
 /**
@@ -19,6 +20,10 @@ import java.util.UUID
  * Enrolling into a study compiles its component schedules into scheduler tasks; unenrolling removes
  * them. The manager keeps its enrollments across launches and reconciles the derived tasks whenever
  * a study's definition changes.
+ *
+ * When configured with a [StudyHealthConfiguration], the manager also configures the `Health` module
+ * from the studies' health data collection components: read access to the required sample types of
+ * every study it was enrolled in or informed about, and background collection for enrolled studies.
  */
 interface StudyManager : Module {
 
@@ -69,6 +74,13 @@ interface StudyManager : Module {
      * Deletes stored study bundles that no longer correspond to any current enrollment.
      */
     suspend fun removeOrphanedStudyBundles()
+
+    /**
+     * Resolves localized study content, such as task titles and instructions, in [locale] from now
+     * on, replacing the locale the manager was configured with. The tasks of current enrollments are
+     * updated in the background, and with them the texts of their scheduled notifications.
+     */
+    fun updatePreferredLocale(locale: Locale)
 }
 
 /**

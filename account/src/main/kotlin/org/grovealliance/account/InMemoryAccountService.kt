@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  *     override val configuration = Configuration {
  *         accountConfiguration(
- *             service = InMemoryAccountService(),
+ *             service = { InMemoryAccountService() },
  *         )
  *     }
  * }
@@ -105,6 +105,16 @@ class InMemoryAccountService(
 
     override suspend fun resetPassword(userId: String): Result<Unit> {
         // No-op for in-memory: there is no external reset mechanism
+        return Result.success(Unit)
+    }
+
+    override suspend fun sendEmailVerification(): Result<Unit> {
+        // No-op for in-memory: there are no emails to send
+        return Result.success(Unit)
+    }
+
+    override suspend fun refresh(): Result<Unit> {
+        // No-op for in-memory: the account already holds the only copy of the details
         return Result.success(Unit)
     }
 

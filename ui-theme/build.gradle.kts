@@ -13,3 +13,7 @@ plugins {
 android {
     namespace = "org.grovealliance.ui.theme"
 }
+
+dependencies {
+    testImplementation(libs.bundles.unit.testing)
+}

@@ -9,6 +9,7 @@ package org.grovealliance.account
 
 import org.grovealliance.account.internal.AccountModulesBuilder
 import org.grovealliance.core.ConfigurationBuilder
+import org.grovealliance.core.DependenciesGraph
 import org.grovealliance.core.GroveDsl
 
 /**
@@ -33,7 +34,8 @@ import org.grovealliance.core.GroveDsl
  * If [initialDetails] is provided, the account starts in an associated/signed-in state.
  * Otherwise, the account starts without an associated user.
  *
- * @param service The [AccountService] responsible for managing account association and state changes.
+ * @param service Creates the [AccountService] responsible for managing account association and state
+ *        changes. Runs in the built [DependenciesGraph], so it can resolve the app's own components.
  * @param storageProvider Optional provider to persist and retrieve additional account values that are not managed
  *        by the [service].
  * @param initialDetails Optional initial [AccountDetails]. If present, the account is considered associated.
@@ -42,7 +44,7 @@ import org.grovealliance.core.GroveDsl
  */
 @GroveDsl
 fun ConfigurationBuilder.accountConfiguration(
-    service: AccountService,
+    service: DependenciesGraph.() -> AccountService,
     storageProvider: AccountStorageProvider? = null,
     initialDetails: AccountDetails? = null,
     codecConfig: AccountDetailsCodecConfig = AccountDetailsCodecConfig(),
@@ -75,7 +77,7 @@ fun ConfigurationBuilder.accountConfiguration(
  * Typical usage:
  * ```kotlin
  * accountConfiguration(
- *   service = ...,
+ *   service = { ... },
  *   keys = {
  *     requires(AccountKeys.accountId)
  *     collects(AccountKeys.email)

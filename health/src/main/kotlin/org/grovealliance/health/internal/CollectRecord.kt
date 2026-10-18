@@ -22,8 +22,8 @@ import org.grovealliance.health.healthLogger
  * Enables real-time or periodic Health data collection and delivery to a [org.grovealliance.health.HealthConstraint].
  */
 internal class CollectRecord(
-    private val recordType: AnyRecordType,
-    private val start: CollectionMode = CollectionMode.Manual,
+    val recordType: AnyRecordType,
+    val start: CollectionMode = CollectionMode.Manual,
     private val continueInBackground: Boolean = false,
     private val timeRange: CollectionTimeRange = CollectionTimeRange.NewRecords,
     private val predicate: ((Record) -> Boolean)? = null,

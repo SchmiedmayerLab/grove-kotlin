@@ -7,6 +7,7 @@
 
 package org.grovealliance.scheduler
 
+import android.content.Intent
 import org.grovealliance.core.Module
 
 /**
@@ -24,4 +25,10 @@ interface SchedulerNotifications : Module {
      * Recomputes and re-arms the pending notifications from the current task store.
      */
     fun scheduleNotificationsRefresh()
+
+    /**
+     * The task event whose notification opened the app with [intent], or `null` when [intent] was not
+     * started by tapping a task notification.
+     */
+    fun openedNotification(intent: Intent): OpenedTaskNotification?
 }

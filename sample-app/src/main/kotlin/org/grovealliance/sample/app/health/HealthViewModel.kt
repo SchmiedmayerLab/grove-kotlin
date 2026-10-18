@@ -24,15 +24,18 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.Health
+import org.grovealliance.health.HealthConnectAvailability
 import org.grovealliance.health.HealthQueryTimeRange
 import org.grovealliance.health.RecordType
 import org.grovealliance.sample.app.NavigationEvent
 import org.grovealliance.sample.app.Navigator
+import org.grovealliance.ui.AsyncTextButton
 import org.grovealliance.ui.ComposableContent
 import org.grovealliance.ui.DisplayedEffect
 import org.grovealliance.ui.GroveScaffold
@@ -66,7 +69,7 @@ class HealthViewModel(
 
     init {
         viewModelScope.launch {
-            health.isFullyAuthorizedState.collect {
+            combine(health.availability, health.isFullyAuthorizedState) { _, _ -> }.collect {
                 update()
             }
         }
@@ -75,6 +78,7 @@ class HealthViewModel(
     private fun update() {
         viewModelScope.launch {
             val dataAccessRequirements = health.dataAccessRequirements
+            val availabilitySection = availabilitySection(availability = health.availability.value)
 
             val permissionSection = PermissionsSection(
                 title = "Permissions",
@@ -82,8 +86,10 @@ class HealthViewModel(
                     null
                 } else {
                     PermissionAction(
-                        onClick = {
-                            health.requestPermissionsIfNeeded(activity = it)
+                        onClick = { activity ->
+                            viewModelScope.launch {
+                                health.requestPermissionsIfNeeded(activity = activity)
+                            }
                         }
                     )
                 },
@@ -119,6 +125,7 @@ class HealthViewModel(
             )
             _uiState.update {
                 HealthUiState.Content(
+                    availability = availabilitySection,
                     permission = permissionSection,
                     queriesSection = queriesSection,
                     insertSection = insertSection,
@@ -126,6 +133,19 @@ class HealthViewModel(
             }
         }
     }
+
+    private fun availabilitySection(availability: HealthConnectAvailability) = AvailabilitySection(
+        title = "Health Connect",
+        description = when (availability) {
+            HealthConnectAvailability.Available -> "Health Connect is available."
+            HealthConnectAvailability.UpdateRequired -> "Health Connect needs to be installed or updated."
+            HealthConnectAvailability.Unavailable -> "Health Connect isn't supported on this device."
+        },
+        action = AsyncTextButton(
+            title = StringResource("Install or update Health Connect"),
+            action = { health.installOrUpdateHealthConnect() },
+        ).takeIf { availability == HealthConnectAvailability.UpdateRequired },
+    )
 
     private suspend fun buildPermissionItem(record: AnyRecordType, isRead: Boolean): PermissionItemContent {
         val hasPermission = if (isRead) {
@@ -193,6 +213,7 @@ data class HealthScreenContent(
                             modifier = Modifier.verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(Spacings.medium)
                         ) {
+                            uiState.availability.Content()
                             uiState.permission.Content()
                             uiState.queriesSection.Content()
                             uiState.insertSection.Content()
@@ -207,6 +228,7 @@ data class HealthScreenContent(
 sealed interface HealthUiState {
     data object Loading : HealthUiState
     data class Content(
+        val availability: AvailabilitySection,
         val permission: PermissionsSection,
         val queriesSection: QueriesSection,
         val insertSection: InsertSection,

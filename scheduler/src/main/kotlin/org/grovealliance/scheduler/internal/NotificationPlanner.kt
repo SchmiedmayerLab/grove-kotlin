@@ -49,6 +49,7 @@ internal class NotificationPlanner(
         return PlannedNotification(
             id = notificationId(event.taskId, event.occurrenceStart),
             taskId = event.taskId,
+            occurrenceStartMillis = event.occurrenceStart.toEpochMilli(),
             fireTimeMillis = fireTime.toEpochMilli(),
             title = event.title,
             body = event.body,
@@ -104,6 +105,7 @@ internal data class NotifiableEvent(
 internal data class PlannedNotification(
     val id: String,
     val taskId: String,
+    val occurrenceStartMillis: Long,
     val fireTimeMillis: Long,
     val title: String,
     val body: String,

@@ -69,6 +69,7 @@ private fun ConfigurationBuilder.registerSchedulerNotifications(
         NotificationSchedulerImpl(
             context = appContext(),
             timeProvider = dependency(),
+            configuration = configuration,
             storageFactory = dependency(),
         )
     }

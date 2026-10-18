@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.Instant
+import java.util.Locale
 import java.util.UUID
 
 /**
@@ -24,6 +25,12 @@ import java.util.UUID
 class FakeStudyManager : StudyManager {
 
     private val state = MutableStateFlow<List<StudyEnrollment>>(emptyList())
+
+    /**
+     * The locale last passed to [updatePreferredLocale], or `null` if it was never called.
+     */
+    var preferredLocale: Locale? = null
+        private set
 
     override val enrollments: Flow<List<StudyEnrollment>> = state.asStateFlow()
 
@@ -69,4 +76,8 @@ class FakeStudyManager : StudyManager {
     override suspend fun removeOrphanedTasks() = Unit
 
     override suspend fun removeOrphanedStudyBundles() = Unit
+
+    override fun updatePreferredLocale(locale: Locale) {
+        preferredLocale = locale
+    }
 }

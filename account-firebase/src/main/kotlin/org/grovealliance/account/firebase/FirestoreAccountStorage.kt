@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  *     override val configuration = Configuration {
  *         accountConfiguration(
- *             service = FirebaseAccountService(),
+ *             service = { FirebaseAccountService() },
  *             storageProvider = FirestoreAccountStorage(collectionPath = "users"),
  *             configuration = {
  *                 requires(key = AccountKeys.accountId)

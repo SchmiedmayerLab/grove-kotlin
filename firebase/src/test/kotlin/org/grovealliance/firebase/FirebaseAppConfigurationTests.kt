@@ -71,7 +71,7 @@ class FirebaseAppConfigurationTests {
     fun `it should not report configured when registered with options it cannot initialize`() {
         // given
         testGroveApplication {
-            firebaseApp(options = OPTIONS)
+            firebaseApp(options = { OPTIONS })
         }
 
         // when
@@ -82,11 +82,27 @@ class FirebaseAppConfigurationTests {
     }
 
     @Test
+    fun `it should resolve its options from the dependency graph`() {
+        // given
+        var resolved: FirebaseOptions? = null
+        testGroveApplication {
+            singleton { OptionsSource(options = OPTIONS) }
+            firebaseApp(options = { dependency<OptionsSource>().options.also { resolved = it } })
+        }
+
+        // when
+        dependency<FirebaseAppConfiguration>().value
+
+        // then
+        assertThat(resolved).isEqualTo(OPTIONS)
+    }
+
+    @Test
     fun `it should not run the initialization hook when initialization failed`() {
         // given
         var ranHook = false
         testGroveApplication {
-            firebaseApp(options = OPTIONS, onInitialized = { ranHook = true })
+            firebaseApp(options = { OPTIONS }, onInitialized = { ranHook = true })
         }
 
         // when
@@ -113,6 +129,8 @@ class FirebaseAppConfigurationTests {
         // then
         assertThat(completed).isNull()
     }
+
+    private data class OptionsSource(val options: FirebaseOptions)
 
     private companion object {
         val OPTIONS: FirebaseOptions = FirebaseOptions.Builder()
