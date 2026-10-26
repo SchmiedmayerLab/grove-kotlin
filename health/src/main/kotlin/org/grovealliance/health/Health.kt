@@ -8,13 +8,11 @@
 package org.grovealliance.health
 
 import androidx.fragment.app.FragmentActivity
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.records.Record
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import org.grovealliance.core.Module
-import org.grovealliance.core.requireDependency
-import org.grovealliance.health.internal.HealthClient
-import org.grovealliance.health.internal.HealthConfigurationComponent
-import org.grovealliance.health.internal.PrivacyConfig
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -36,54 +34,80 @@ import kotlin.time.Duration.Companion.seconds
  *        )
  *    }
  * }
+ * ```
  *
+ * Below Android 14, Health Connect is a separate app. Check [availability] before asking for
+ * permissions, and offer [installOrUpdateHealthConnect] while it is
+ * [HealthConnectAvailability.UpdateRequired]:
+ *
+ * ```kotlin
+ * when (health.availability.value) {
+ *     HealthConnectAvailability.Available -> health.requestPermissionsIfNeeded(activity)
+ *     HealthConnectAvailability.UpdateRequired -> health.installOrUpdateHealthConnect()
+ *     HealthConnectAvailability.Unavailable -> Unit
+ * }
+ * ```
  */
-class Health internal constructor(
-    private val configComponents: Set<HealthConfigurationComponent>,
-    internal val privacyConfig: PrivacyConfig,
-) : Module {
+@Suppress("TooManyFunctions")
+interface Health : Module {
     /**
-     * The internal [HealthClient] instance, either [org.grovealliance.health.internal.DefaultHealthClient] or
-     * [org.grovealliance.health.internal.NoOpHealthClient] in case Health Connect is not available.
+     * The read and write access this module requests: what it was configured with, plus what the
+     * latest [updateConfiguration] added.
      */
-    private val healthClient by lazy {
-        HealthClient.create(
-            applicationModule = requireDependency(),
-            concurrency = requireDependency(),
-            localStorage = requireDependency(),
-            appLifecycle = requireDependency(),
-            configurations = configComponents,
-        )
-    }
+    val dataAccessRequirements: HealthDataAccessRequirements
+
+    /**
+     * Whether Health Connect can be used on this device.
+     *
+     * It is checked again each time the app comes to the foreground, or on [refreshAvailability]. Once it
+     * becomes [HealthConnectAvailability.Available], configured collection starts and every operation
+     * reaches Health Connect, without an app restart. Until then, operations do nothing, queries return
+     * no records and permission requests report `false`.
+     */
+    val availability: StateFlow<HealthConnectAvailability>
 
     /**
      * Indicates whether all requested permissions have been granted.
      */
-    val isFullyAuthorizedState = healthClient.isFullyAuthorizedState
+    val isFullyAuthorizedState: StateFlow<Boolean>
 
     /**
-     * The current configuration state of the Health module.
+     * Checks again whether Health Connect can be used, for example after the user returned from installing
+     * it. See [availability].
      */
-    val dataAccessRequirements: HealthDataAccessRequirements
-        get() = healthClient.dataAccessRequirements
-
-    internal constructor(builder: HealthModuleBuilder) : this(
-        configComponents = builder.components.toSet(),
-        privacyConfig = builder.privacyConfigBuilder.config,
-    )
-
-    internal fun onPermissionsGranted(granted: Set<String>) {
-        healthClient.onPermissionsGranted(granted = granted)
-    }
+    fun refreshAvailability()
 
     /**
-     * Requests all permissions that have not yet been granted.
+     * Opens the store listing of Health Connect, where the user can install or update it.
+     *
+     * @return `true` if a store listing was opened, `false` if no app could open it.
+     */
+    fun installOrUpdateHealthConnect(): Boolean
+
+    /**
+     * Requests all permissions that have not yet been granted, and suspends until the user closes the
+     * Health Connect permission screen, or [activity] finishes before that.
+     *
+     * Health Connect stops showing its permission screen after the user denied a permission twice; the
+     * request then returns at once.
      *
      * @param activity The [FragmentActivity] to use for requesting permissions.
+     *
+     * @return `true` if every requested permission is granted afterwards, `false` otherwise, including
+     * when Health Connect isn't [available][availability].
      */
-    fun requestPermissionsIfNeeded(activity: FragmentActivity) {
-        healthClient.requestPermissionsIfNeeded(activity = activity)
-    }
+    suspend fun requestPermissionsIfNeeded(activity: FragmentActivity): Boolean
+
+    /**
+     * Extends the configuration the module was registered with, using the same [HealthConfigurationScope]
+     * as `health { }`, for access and collection only known at runtime.
+     *
+     * Each call replaces what the previous call added; the registered configuration is kept. A record
+     * type no longer collected by the update stops being collected and its collection state is reset.
+     * The update is kept when Health Connect becomes [available][availability] later. Privacy settings
+     * in [block] are ignored.
+     */
+    suspend fun updateConfiguration(block: HealthConfigurationScope.() -> Unit)
 
     /**
      * Requests read permission for the given [Record] [type].
@@ -91,9 +115,7 @@ class Health internal constructor(
      * @param type The [Record] type to request read permission for.
      * @param activity The [FragmentActivity] to use for requesting permissions.
      */
-    fun requestReadPermission(type: AnyRecordType, activity: FragmentActivity) {
-        healthClient.requestReadPermission(type = type, activity = activity)
-    }
+    fun requestReadPermission(type: AnyRecordType, activity: FragmentActivity)
 
     /**
      * Requests write permission for the given [Record] [type].
@@ -101,18 +123,14 @@ class Health internal constructor(
      * @param type The [Record] type to request write permission for.
      * @param activity The [FragmentActivity] to use for requesting permissions.
      */
-    fun requestWritePermission(type: AnyRecordType, activity: FragmentActivity) {
-        healthClient.requestWritePermission(type = type, activity = activity)
-    }
+    fun requestWritePermission(type: AnyRecordType, activity: FragmentActivity)
 
     /**
      * Resets the record collection for the given [Record] [type].
      *
      * @param type The [Record] type to reset the collection for.
      */
-    fun resetRecordCollection(type: AnyRecordType) {
-        healthClient.resetRecordCollection(type)
-    }
+    fun resetRecordCollection(type: AnyRecordType)
 
     /**
      * Inserts a [Record] into Health Connect.
@@ -121,7 +139,7 @@ class Health internal constructor(
      *
      * @return `true` if the insertion was successful, `false` otherwise.
      */
-    suspend fun insert(record: Record): Boolean = healthClient.insert(record)
+    suspend fun insert(record: Record): Boolean
 
     /**
      * Queries health data of the given [Record] [type].
@@ -142,14 +160,7 @@ class Health internal constructor(
         sortedBy: QuerySort = QuerySort.NONE,
         limit: Int = Int.MAX_VALUE,
         predicate: ((T) -> Boolean)? = null,
-    ): List<T> = healthClient.query(
-        type = type,
-        timeRange = timeRange,
-        source = source,
-        sortedBy = sortedBy,
-        limit = limit,
-        predicate = predicate,
-    )
+    ): List<T>
 
     /**
      * Queries health data of the given [Record] [type] with pagination support.
@@ -166,12 +177,7 @@ class Health internal constructor(
         timeRange: HealthQueryTimeRange = HealthQueryTimeRange.today(),
         anchor: String?,
         predicate: ((T) -> Boolean)? = null,
-    ): QueryResult<T> = healthClient.query(
-        type = type,
-        timeRange = timeRange,
-        anchor = anchor,
-        predicate = predicate,
-    )
+    ): QueryResult<T>
 
     /**
      * Retrieves the oldest sample date for the given [Record] [type].
@@ -180,7 +186,58 @@ class Health internal constructor(
      *
      * @return The oldest sample date as an [Instant], or `null` if no samples exist.
      */
-    suspend fun <T : Record> oldestSampleDate(type: RecordType<T>): Instant? = healthClient.oldestSampleDate(type)
+    suspend fun <T : Record> oldestSampleDate(type: RecordType<T>): Instant?
+
+    /**
+     * Retrieves the most recent record of the given [type], by start time.
+     *
+     * @param type The [Record] type to retrieve.
+     * @param timeRange The [HealthQueryTimeRange] to look in. Defaults to all time.
+     * @param source The data source to filter by. Defaults to `null`, which includes all sources.
+     *
+     * @return The most recent record, or `null` if there is none or reading [type] isn't permitted.
+     */
+    suspend fun <T : Record> mostRecent(
+        type: RecordType<T>,
+        timeRange: HealthQueryTimeRange = HealthQueryTimeRange.ever(),
+        source: String? = null,
+    ): T?
+
+    /**
+     * Aggregates [metric] over [timeRange], such as the total steps or the average heart rate.
+     * Health Connect removes overlapping data from different sources.
+     *
+     * @param metric The metric of a record type, such as `StepsRecord.COUNT_TOTAL`.
+     * @param timeRange The [HealthQueryTimeRange] to aggregate.
+     * @param source The data source to filter by. Defaults to `null`, which includes all sources.
+     *
+     * @return The aggregated value in the unit of [metric], or `null` if there is no data or reading
+     * the metric's record type isn't permitted.
+     */
+    suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        source: String? = null,
+    ): T?
+
+    /**
+     * Aggregates [metric] over [timeRange] split into buckets of [interval], such as the daily steps
+     * of a week.
+     *
+     * @param metric The metric of a record type, such as `StepsRecord.COUNT_TOTAL`.
+     * @param timeRange The [HealthQueryTimeRange] to aggregate; it must have a start and an end.
+     * @param interval The [AggregationInterval] to split [timeRange] into.
+     * @param source The data source to filter by. Defaults to `null`, which includes all sources.
+     *
+     * @return The buckets in chronological order, or an empty list if reading the metric's record type
+     * isn't permitted.
+     */
+    suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval,
+        source: String? = null,
+    ): List<AggregationBucket<T>>
 
     /**
      * Performs a continuous query for health data of the given [Record] [type].
@@ -199,17 +256,7 @@ class Health internal constructor(
         interval: Duration = 15.seconds,
         anchor: String? = null,
         predicate: ((T) -> Boolean)? = null,
-    ): Flow<QueryResult<T>> = healthClient.continuousQuery(
-        type = type,
-        timeRange = timeRange,
-        interval = interval,
-        anchor = anchor,
-        predicate = predicate,
-    )
-
-    override fun configure() {
-        healthClient.configure()
-    }
+    ): Flow<QueryResult<T>>
 
     /**
      * Checks if the app is authorized to read data of the given [Record] [type].
@@ -218,9 +265,7 @@ class Health internal constructor(
      *
      * @return `true` if the app is authorized to read data of the specified [type], `false` otherwise.
      */
-    suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean {
-        return healthClient.isAuthorizedToRead(type)
-    }
+    suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean
 
     /**
      * Checks if the app is authorized to write data of the given [Record] [type].
@@ -229,9 +274,7 @@ class Health internal constructor(
      *
      * @return `true` if the app is authorized to write data of the specified [type], `false` otherwise.
      */
-    suspend fun isAuthorizedToWrite(type: AnyRecordType): Boolean {
-        return healthClient.isAuthorizedToWrite(type)
-    }
+    suspend fun isAuthorizedToWrite(type: AnyRecordType): Boolean
 
     /**
      * Represents the configuration state of Health module

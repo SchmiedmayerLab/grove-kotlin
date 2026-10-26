@@ -229,6 +229,23 @@ internal class FirebaseAccountServiceImpl(
     override suspend fun resetPassword(userId: String): Result<Unit> =
         execute { auth.sendPasswordResetEmail(userId).awaitVoid() }
 
+    override suspend fun sendEmailVerification(): Result<Unit> = execute {
+        val user = currentFirebaseUser ?: throw FirebaseAccountError.NotSignedIn()
+        user.sendEmailVerification().awaitVoid()
+    }
+
+    override suspend fun refresh(): Result<Unit> = execute {
+        val user = currentFirebaseUser ?: throw FirebaseAccountError.NotSignedIn()
+        user.reload().awaitVoid()
+        val reloaded = currentFirebaseUser ?: throw FirebaseAccountError.NotSignedIn()
+        val current = account.details.value
+        if (current?.getOrNull(AccountKeys.accountId::class) == reloaded.uid) {
+            account.supplyUserDetails(current.withFirebaseOwnedDetails(user = reloaded))
+        } else {
+            updateUser(reloaded)
+        }
+    }
+
     override suspend fun logout(): Result<Unit> = execute {
         val currentUserId = currentFirebaseUser?.uid
         auth.signOut()
@@ -367,6 +384,17 @@ internal class FirebaseAccountServiceImpl(
             this.isAnonymousUser = user.isAnonymous
             addingContentsOf?.let { addContents(addingContentsOf) }
         }
+    }
+
+    /**
+     * A copy of these details with the values [user] owns replaced, keeping the externally stored
+     * values and the other flags, so that reloading the user needs no external storage request.
+     */
+    private fun AccountDetails.withFirebaseOwnedDetails(user: FirebaseUser): AccountDetails = copy().apply {
+        user.displayName?.let { this[AccountKeys.name::class] = PersonName(fullName = it) }
+        user.email?.let { this[AccountKeys.userId::class] = it }
+        isVerified = user.isEmailVerified
+        isAnonymousUser = user.isAnonymous
     }
 
     private fun signOutCurrentUserIfNonAnonymous() {

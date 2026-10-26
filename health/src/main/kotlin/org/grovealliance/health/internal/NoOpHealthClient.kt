@@ -8,12 +8,15 @@
 package org.grovealliance.health.internal
 
 import androidx.fragment.app.FragmentActivity
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.records.Record
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import org.grovealliance.health.AggregationBucket
+import org.grovealliance.health.AggregationInterval
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.Health
 import org.grovealliance.health.HealthDataAccessRequirements
@@ -26,8 +29,9 @@ import java.time.Instant
 import kotlin.time.Duration
 
 @Suppress("TooManyFunctions")
-internal class NoOpHealthClient : HealthClient {
-    override val dataAccessRequirements: HealthDataAccessRequirements = HealthDataAccessRequirements()
+internal class NoOpHealthClient(
+    override val dataAccessRequirements: HealthDataAccessRequirements,
+) : HealthClient {
     private val logger by healthLogger()
     override val configState: Health.ConfigState = Health.ConfigState.Completed
     private val _isFullyAuthorizedState = MutableStateFlow(false)
@@ -41,8 +45,17 @@ internal class NoOpHealthClient : HealthClient {
         logger.w { "NoOpHealthClient can not receive permission granted callbacks" }
     }
 
-    override fun requestPermissionsIfNeeded(activity: FragmentActivity) {
+    override fun onPermissionRequestAbandoned() {
+        logger.w { "NoOpHealthClient can not receive permission request callbacks" }
+    }
+
+    override suspend fun requestPermissionsIfNeeded(activity: FragmentActivity): Boolean {
         logger.w { "NoOpHealthClient can not process permission requests" }
+        return false
+    }
+
+    override suspend fun updateRuntimeConfiguration(components: Set<HealthConfigurationComponent>) {
+        logger.w { "NoOpHealthClient can not apply a runtime configuration" }
     }
 
     override fun requestReadPermission(type: AnyRecordType, activity: FragmentActivity) {
@@ -98,6 +111,25 @@ internal class NoOpHealthClient : HealthClient {
     override suspend fun <T : Record> oldestSampleDate(type: RecordType<T>): Instant? {
         logger.w { "NoOpHealthClient can not retrieve oldest sample dates" }
         return null
+    }
+
+    override suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        source: String?,
+    ): T? {
+        logger.w { "NoOpHealthClient can not aggregate" }
+        return null
+    }
+
+    override suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval,
+        source: String?,
+    ): List<AggregationBucket<T>> {
+        logger.w { "NoOpHealthClient can not aggregate" }
+        return emptyList()
     }
 
     override suspend fun addHealthDataCollector(collector: HealthDataCollector) {

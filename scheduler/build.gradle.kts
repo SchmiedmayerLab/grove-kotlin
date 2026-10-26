@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core-coroutines"))
     implementation(project(":core-logging"))
     implementation(project(":core-time"))
+    implementation(project(":resources"))
     implementation(project(":storage-local"))
 
     implementation(libs.androidx.core.ktx)
@@ -40,4 +41,5 @@ dependencies {
     testImplementation(libs.bundles.unit.testing)
     testImplementation(testFixtures(project(":core-time")))
     androidTestImplementation(libs.bundles.integration.testing)
+    androidTestImplementation(libs.androidx.test.rules)
 }

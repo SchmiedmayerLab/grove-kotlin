@@ -7,6 +7,7 @@
 
 package org.grovealliance.core
 
+import android.app.Application
 import android.content.Context
 import org.grovealliance.core.internal.DependencyKey
 import org.grovealliance.core.internal.DependencyRegistry
@@ -75,6 +76,14 @@ class DependenciesGraph internal constructor(
      */
     fun appContext(): Context =
         dependency<ApplicationModule>().application.requireApplicationContext()
+
+    /**
+     * Returns the [Application] backing this graph.
+     *
+     * Convenience for factory scopes that need the [Application] itself, for example to observe
+     * activity lifecycles, without resolving the [ApplicationModule] manually.
+     */
+    fun application(): Application = appContext() as Application
 
     /**
      * Attempts to instantiate a type [T] via reflection fallback strategies when no factory was

@@ -12,6 +12,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.grovealliance.core.time.FakeTimeProvider
 import org.grovealliance.foundation.fixtures.UUIDFixtures
+import org.grovealliance.health.CollectionMode
+import org.grovealliance.health.FakeHealth
+import org.grovealliance.health.RecordType
 import org.grovealliance.scheduler.FakeScheduleCalculator
 import org.grovealliance.scheduler.FakeScheduler
 import org.grovealliance.scheduler.NotificationThread
@@ -21,6 +24,8 @@ import org.grovealliance.scheduler.fixtures.TaskDraftFixtures
 import org.grovealliance.study.ScheduledTaskAction
 import org.grovealliance.study.ScheduledTaskActionKey
 import org.grovealliance.study.StudyContextKey
+import org.grovealliance.study.StudyHealthConfiguration
+import org.grovealliance.study.StudyHealthDataMapping
 import org.grovealliance.study.StudyTaskCategories
 import org.grovealliance.study.StudyTaskId
 import org.grovealliance.studydefinition.StudyBundle
@@ -35,6 +40,7 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.Duration.Companion.hours
 
 class StudyManagerImplTest {
 
@@ -47,6 +53,8 @@ class StudyManagerImplTest {
     private val dao = FakeStudyEnrollmentDao()
     private val timeProvider = FakeTimeProvider()
     private val compiler = ScheduleCompiler(scheduleCalculator, timeProvider)
+    private val health = FakeHealth()
+    private val managerScope = TestScope()
     private lateinit var bundleStore: BundleStore
 
     @get:Rule
@@ -213,14 +221,125 @@ class StudyManagerImplTest {
         assertThat(scheduler.tasks).isEmpty()
     }
 
-    private fun manager() = StudyManagerImpl(
+    @Test
+    fun `updating the preferred locale retitles the enrolled study's tasks`() = runTest {
+        // given
+        val manager = manager()
+        manager.enroll(britishEnglishBundle())
+
+        // when
+        manager.updatePreferredLocale(locale = Locale.forLanguageTag("en-GB"))
+        managerScope.testScheduler.advanceUntilIdle()
+
+        // then
+        assertThat(scheduler.tasks.values.map { it.title })
+            .contains("Welcome to the Example Study, UK edition")
+    }
+
+    @Test
+    fun `tasks enrolled after updating the preferred locale use it`() = runTest {
+        // given
+        val manager = manager()
+        manager.updatePreferredLocale(locale = Locale.forLanguageTag("en-GB"))
+
+        // when
+        manager.enroll(britishEnglishBundle())
+
+        // then
+        assertThat(scheduler.tasks.values.map { it.title })
+            .contains("Welcome to the Example Study, UK edition")
+    }
+
+    @Test
+    fun `enrolling collects the required health data sample types`() = runTest {
+        // when
+        manager().enroll(exampleBundle())
+
+        // then
+        assertThat(health.collectedRecordTypes).containsExactly(RecordType.heartRate, RecordType.steps)
+        assertThat(health.dataAccessRequirements.read).containsExactly(RecordType.heartRate, RecordType.steps)
+    }
+
+    @Test
+    fun `enrolling collects optional sample types only once reading them is permitted`() = runTest {
+        // given
+        health.setAuthorizedToRead(types = setOf(RecordType.activeCaloriesBurned))
+
+        // when
+        manager().enroll(exampleBundle())
+
+        // then
+        assertThat(health.collectedRecordTypes)
+            .containsExactly(RecordType.heartRate, RecordType.steps, RecordType.activeCaloriesBurned)
+    }
+
+    @Test
+    fun `informing about a study requests read access without collecting`() = runTest {
+        // when
+        manager().informAboutStudies(listOf(exampleBundle()))
+
+        // then
+        assertThat(health.dataAccessRequirements.read).containsExactly(RecordType.heartRate, RecordType.steps)
+        assertThat(health.collectedRecordTypes).isEmpty()
+    }
+
+    @Test
+    fun `unenrolling stops collecting the study's sample types`() = runTest {
+        // given
+        val manager = manager()
+        manager.enroll(exampleBundle())
+        val enrollment = manager.studyEnrollments().single()
+
+        // when
+        manager.unenroll(enrollment)
+
+        // then
+        assertThat(health.collectedRecordTypes).isEmpty()
+    }
+
+    @Test
+    fun `enrolling collects at the configured polling interval`() = runTest {
+        // given
+        val configuration = StudyHealthConfiguration(
+            mapping = StudyHealthDataMapping.Default,
+            pollingInterval = 1.hours,
+        )
+
+        // when
+        manager(healthConfiguration = configuration).enroll(exampleBundle())
+
+        // then
+        assertThat(health.collectionModes.values.toSet())
+            .containsExactly(CollectionMode.Automatic(pollingInterval = 1.hours))
+    }
+
+    @Test
+    fun `enrolling works without a health configuration`() = runTest {
+        // when
+        val manager = manager(healthConfiguration = null)
+        manager.enroll(exampleBundle())
+
+        // then
+        assertThat(manager.studyEnrollments()).hasSize(1)
+        assertThat(health.configurationUpdateCount).isEqualTo(0)
+    }
+
+    private fun manager(
+        healthConfiguration: StudyHealthConfiguration? = StudyHealthConfiguration.DEFAULT,
+    ) = StudyManagerImpl(
         enrollmentDao = dao,
         scheduler = scheduler,
         scheduleCompiler = compiler,
         timeProvider = timeProvider,
         bundleStore = bundleStore,
         mapper = StudyEnrollmentMapper(),
-        scope = TestScope(),
+        scope = managerScope,
+        healthCollector = healthConfiguration?.let {
+            StudyHealthCollector(
+                health = health,
+                configuration = it,
+            )
+        },
         environment = StudyEnvironment(preferredLocale = Locale.forLanguageTag("en-US")),
     )
 
@@ -234,6 +353,20 @@ class StudyManagerImplTest {
             .also { StudyBundleFixtures.exampleBundleDir().copyRecursively(it, overwrite = true) }
         val definition = File(copy, "definition.json")
         definition.writeText(definition.readText().replace("\"enrollment\": {}", "\"activation\": {}"))
+        return StudyBundle.open(copy)
+    }
+
+    /**
+     * The example bundle with a British English localization of its welcome article.
+     */
+    private fun britishEnglishBundle(): StudyBundle {
+        val copy = tempFolder.newFolder()
+            .resolve("example.studybundle")
+            .also { StudyBundleFixtures.exampleBundleDir().copyRecursively(it, overwrite = true) }
+        val article = File(copy, "article/welcome+en-US.md").readText()
+        File(copy, "article/welcome+en-GB.md").writeText(
+            article.replace("title: Welcome to the Example Study", "title: Welcome to the Example Study, UK edition"),
+        )
         return StudyBundle.open(copy)
     }
 

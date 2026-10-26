@@ -71,6 +71,22 @@ interface AccountService : Module {
     suspend fun resetPassword(userId: String): Result<Unit>
 
     /**
+     * Sends the signed-in user an email to verify their email address.
+     *
+     * @return A [Result] indicating whether the email was sent; a failure if no user is signed in.
+     */
+    suspend fun sendEmailVerification(): Result<Unit>
+
+    /**
+     * Reloads the signed-in user's details that this service owns, such as whether their email
+     * address is verified, and supplies them to the [Account].
+     *
+     * @return A [Result] indicating whether the details were reloaded; a failure if no user is
+     *   signed in.
+     */
+    suspend fun refresh(): Result<Unit>
+
+    /**
      * Signs in the user with the provided [provider].
      *
      * The default implementation returns a failure indicating that the provider-based sign-in

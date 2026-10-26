@@ -17,7 +17,9 @@ import kotlinx.serialization.serializer
 import org.grovealliance.foundation.UUID
 import org.junit.After
 import org.junit.Test
+import java.io.File
 import java.nio.charset.StandardCharsets
+import javax.crypto.Cipher
 import kotlin.random.Random
 
 class LocalStorageTests {
@@ -211,5 +213,80 @@ class LocalStorageTests {
 
         // then
         assertThat(value).isEqualTo(storedValue)
+    }
+
+    @Test
+    fun `it should handle a value of several kilobytes encrypted using the key store`() = runTest {
+        // given
+        val value = largeValue()
+        localStorage.store(
+            key = key,
+            value = value,
+            settings = LocalStorageSetting.EncryptedUsingKeyStore,
+            serializer = serializer(),
+        )
+
+        // when
+        val storedValue = localStorage.read<String>(
+            key = key,
+            settings = LocalStorageSetting.EncryptedUsingKeyStore,
+            serializer = serializer(),
+        )
+
+        // then
+        assertThat(storedValue).isEqualTo(value)
+    }
+
+    @Test
+    fun `it should handle a value of several kilobytes encrypted with a custom key pair`() = runTest {
+        // given
+        val value = largeValue()
+        val keyPair = keyStorage.create("androidKeyStoreKey").getOrThrow()
+        localStorage.store(
+            key = key,
+            value = value,
+            settings = LocalStorageSetting.Encrypted(keyPair),
+            serializer = serializer(),
+        )
+
+        // when
+        val storedValue = localStorage.read<String>(
+            key = key,
+            settings = LocalStorageSetting.Encrypted(keyPair),
+            serializer = serializer(),
+        )
+
+        // then
+        assertThat(storedValue).isEqualTo(value)
+    }
+
+    @Test
+    fun `it should read a value encrypted with the key pair directly`() = runTest {
+        // given
+        val value = UUID().toString()
+        val keyPair = keyStorage.create("androidKeyStoreKey").getOrThrow()
+        val encrypted = Cipher.getInstance(KeyStorage.CIPHER_TRANSFORMATION)
+            .apply { init(Cipher.ENCRYPT_MODE, keyPair.public) }
+            .doFinal(Json.encodeToString(serializer(), value).toByteArray(StandardCharsets.UTF_8))
+        File(context.filesDir, "org.grovealliance.storage.LocalStorage")
+            .apply { mkdirs() }
+            .resolve("$key.localstorage")
+            .writeBytes(encrypted)
+
+        // when
+        val storedValue = localStorage.read<String>(
+            key = key,
+            settings = LocalStorageSetting.Encrypted(keyPair),
+            serializer = serializer(),
+        )
+
+        // then
+        assertThat(storedValue).isEqualTo(value)
+    }
+
+    private fun largeValue(): String = "Hello Paul 👋 ".repeat(LARGE_VALUE_REPETITIONS)
+
+    private companion object {
+        const val LARGE_VALUE_REPETITIONS = 500
     }
 }

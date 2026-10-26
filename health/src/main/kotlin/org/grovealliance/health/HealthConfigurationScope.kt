@@ -15,15 +15,15 @@ import org.grovealliance.health.internal.RequestReadAccess
 import org.grovealliance.health.internal.RequestWriteAccess
 
 /**
- * Builder for configuring the [Health] module.
+ * Scope for configuring the [Health] module.
  */
 @GroveDsl
-class HealthModuleBuilder {
+class HealthConfigurationScope {
     @PublishedApi
     internal val components = mutableSetOf<HealthConfigurationComponent>()
 
     @PublishedApi
-    internal val privacyConfigBuilder = PrivacyConfigBuilder()
+    internal val privacyConfigurationScope = PrivacyConfigurationScope()
 
     /**
      * Adds a [requestReadAccess] component for the given [Record] types.
@@ -36,7 +36,7 @@ class HealthModuleBuilder {
      * Adds a [requestReadAccess] component for the given [Record] types.
      */
     fun requestReadAccess(vararg recordTypes: AnyRecordType) {
-        this@HealthModuleBuilder.requestReadAccess(recordTypes.toSet())
+        this@HealthConfigurationScope.requestReadAccess(recordTypes.toSet())
     }
 
     /**
@@ -50,7 +50,7 @@ class HealthModuleBuilder {
      * Adds a [requestWriteAccess] component for the given [Record] types.
      */
     fun requestWriteAccess(vararg recordTypes: AnyRecordType) {
-        this@HealthModuleBuilder.requestWriteAccess(recordTypes.toSet())
+        this@HealthConfigurationScope.requestWriteAccess(recordTypes.toSet())
     }
 
     /**
@@ -100,7 +100,7 @@ class HealthModuleBuilder {
      * }
      * ```
      */
-    fun privacy(block: PrivacyConfigBuilder.() -> Unit) {
-        privacyConfigBuilder.apply(block)
+    fun privacy(block: PrivacyConfigurationScope.() -> Unit) {
+        privacyConfigurationScope.apply(block)
     }
 }

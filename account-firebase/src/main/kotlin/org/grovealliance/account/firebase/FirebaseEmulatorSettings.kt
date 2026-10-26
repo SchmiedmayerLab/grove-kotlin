@@ -33,9 +33,7 @@ package org.grovealliance.account.firebase
  *     }
  *
  *     accountConfiguration(
- *         service = FirebaseAccountService(
- *             emulatorSettings = emulator
- *         ),
+ *         service = { FirebaseAccountService(emulatorSettings = emulator) },
  *         storageProvider = FirestoreAccountStorage(collectionPath = "users")
  *     )
  * }

@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import org.grovealliance.core.dependency
-import org.grovealliance.health.Health
 import org.grovealliance.resources.Strings
 import org.grovealliance.ui.GroveScaffold
 import org.grovealliance.ui.rememberGroveAppBar
@@ -29,7 +28,7 @@ import org.grovealliance.ui.theme.Spacings
 import org.grovealliance.ui.theme.TextStyles
 
 internal class PermissionsRationaleActivity : AppCompatActivity() {
-    private val health by dependency<Health>()
+    private val health by dependency<HealthImpl>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

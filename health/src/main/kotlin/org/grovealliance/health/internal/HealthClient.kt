@@ -8,22 +8,19 @@
 package org.grovealliance.health.internal
 
 import androidx.fragment.app.FragmentActivity
-import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.records.Record
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import org.grovealliance.core.ApplicationModule
-import org.grovealliance.core.coroutines.Concurrency
-import org.grovealliance.core.lifecycle.AppLifecycle
+import org.grovealliance.health.AggregationBucket
+import org.grovealliance.health.AggregationInterval
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.Health
-import org.grovealliance.health.HealthConstraint
 import org.grovealliance.health.HealthDataAccessRequirements
 import org.grovealliance.health.HealthQueryTimeRange
 import org.grovealliance.health.QueryResult
 import org.grovealliance.health.QuerySort
 import org.grovealliance.health.RecordType
-import org.grovealliance.storage.local.LocalStorage
 import java.time.Instant
 import kotlin.time.Duration
 
@@ -57,11 +54,24 @@ internal interface HealthClient {
     fun onPermissionsGranted(granted: Set<String>)
 
     /**
-     * Requests all permissions that have not yet been granted.
+     * Notifies the HealthClient that a permission request ended without a result, because its activity
+     * finished first.
+     */
+    fun onPermissionRequestAbandoned()
+
+    /**
+     * Requests all permissions that have not yet been granted and suspends until the request ends.
      *
      * @param activity The [FragmentActivity] to use for requesting permissions.
+     * @return `true` if every needed permission is granted afterwards, `false` otherwise.
      */
-    fun requestPermissionsIfNeeded(activity: FragmentActivity)
+    suspend fun requestPermissionsIfNeeded(activity: FragmentActivity): Boolean
+
+    /**
+     * Replaces the components added at runtime with [components], on top of the registered
+     * configuration. Collection of record types only the previous components collected is reset.
+     */
+    suspend fun updateRuntimeConfiguration(components: Set<HealthConfigurationComponent>)
 
     /**
      * Requests read permission for the specified [AnyRecordType].
@@ -189,45 +199,27 @@ internal interface HealthClient {
      */
     suspend fun <T : Record> oldestSampleDate(type: RecordType<T>): Instant?
 
-    companion object {
+    /**
+     * Aggregates [metric] over [timeRange], filtered to [source] if given.
+     *
+     * @return The aggregated value, or `null` if there is no data or reading isn't permitted.
+     */
+    suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        source: String?,
+    ): T?
 
-        /**
-         * Creates a [HealthClient] instance.
-         *
-         * If Health Connect is not available on the device, a [NoOpHealthClient] is returned.
-         *
-         * @param applicationModule The [ApplicationModule] providing application context and standard.
-         * @param concurrency The [Concurrency] instance for coroutine dispatching.
-         * @param localStorage The [LocalStorage] instance for local data storage.
-         * @param appLifecycle The [AppLifecycle] instance for observing application lifecycle events.
-         * @param configurations The set of [HealthConfigurationComponent]s to configure the client with.
-         *
-         * @return A [HealthClient] instance.
-         */
-        fun create(
-            applicationModule: ApplicationModule,
-            concurrency: Concurrency,
-            localStorage: LocalStorage,
-            appLifecycle: AppLifecycle,
-            configurations: Set<HealthConfigurationComponent>,
-        ): HealthClient {
-            val context = applicationModule.requireContext()
-            val healthClient = runCatching {
-                HealthConnectClient.getOrCreate(context)
-            }.getOrNull()
-
-            return if (healthClient != null) {
-                DefaultHealthClient(
-                    healthConnectClient = healthClient,
-                    standard = applicationModule.standard as? HealthConstraint,
-                    concurrency = concurrency,
-                    localStorage = localStorage,
-                    appLifecycle = appLifecycle,
-                    configurations = configurations,
-                )
-            } else {
-                NoOpHealthClient()
-            }
-        }
-    }
+    /**
+     * Aggregates [metric] over [timeRange] split into buckets of [interval], filtered to [source] if
+     * given.
+     *
+     * @return The buckets in chronological order, or an empty list if reading isn't permitted.
+     */
+    suspend fun <T : Any> aggregate(
+        metric: AggregateMetric<T>,
+        timeRange: HealthQueryTimeRange,
+        interval: AggregationInterval,
+        source: String?,
+    ): List<AggregationBucket<T>>
 }

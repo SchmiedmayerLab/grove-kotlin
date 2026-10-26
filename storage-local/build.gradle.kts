@@ -13,6 +13,7 @@ plugins {
 android {
     namespace = "org.grovealliance.storage.local"
     defaultConfig { consumerProguardFiles("consumer-rules.pro") }
+    testFixtures { enable = true }
 }
 
 dependencies {
@@ -21,5 +22,7 @@ dependencies {
     implementation(project(":core-coroutines"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.security.crypto.ktx)
+    testFixturesImplementation(libs.kotlinx.serialization.json)
+
     androidTestImplementation(libs.bundles.integration.testing)
 }

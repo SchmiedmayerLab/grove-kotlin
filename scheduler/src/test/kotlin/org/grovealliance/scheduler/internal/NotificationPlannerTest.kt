@@ -13,7 +13,6 @@ import org.grovealliance.scheduler.NotificationThread
 import org.grovealliance.scheduler.NotificationTime
 import org.grovealliance.scheduler.SchedulerNotificationsConfiguration
 import org.junit.Test
-import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -35,6 +34,19 @@ class NotificationPlannerTest {
         assertThat(planned).hasSize(1)
         assertThat(planned.single().fireTimeMillis).isEqualTo(at(2026, 6, 15, 9).toEpochMilli())
         assertThat(planned.single().timeSensitive).isTrue()
+    }
+
+    @Test
+    fun `records the occurrence start apart from the fire time`() {
+        // given
+        val event = timedEvent(taskId = "t", start = at(2026, 6, 15, 0), isAllDay = true)
+
+        // when
+        val planned = planner().plan(eventsByTask = listOf(listOf(event))).single()
+
+        // then
+        assertThat(planned.occurrenceStartMillis).isEqualTo(at(2026, 6, 15, 0).toEpochMilli())
+        assertThat(planned.fireTimeMillis).isEqualTo(at(2026, 6, 15, 9).toEpochMilli())
     }
 
     @Test
@@ -108,11 +120,7 @@ class NotificationPlannerTest {
             setNow(instant = now)
             setZone(zone = zone)
         },
-        configuration = SchedulerNotificationsConfiguration(
-            limit = limit,
-            window = Duration.ofDays(28),
-            allDayNotificationTime = NotificationTime(hour = 9),
-        ),
+        configuration = SchedulerNotificationsConfiguration.DEFAULT.copy(limit = limit),
     )
 
     private fun timedEvent(

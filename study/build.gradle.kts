@@ -19,6 +19,7 @@ android {
 dependencies {
     api(project(":core"))
     api(project(":foundation"))
+    api(project(":health"))
     api(project(":scheduler"))
     api(project(":study-definition"))
 
@@ -40,6 +41,7 @@ dependencies {
     testImplementation(libs.bundles.unit.testing)
     testImplementation(testFixtures(project(":core-time")))
     testImplementation(testFixtures(project(":foundation")))
+    testImplementation(testFixtures(project(":health")))
     testImplementation(testFixtures(project(":scheduler")))
     testImplementation(testFixtures(project(":study-definition")))
 

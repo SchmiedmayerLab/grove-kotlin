@@ -13,6 +13,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.grovealliance.core.logging.groveLogger
 import org.grovealliance.core.time.TimeProvider
 import org.grovealliance.scheduler.AllowedCompletionPolicy
@@ -47,6 +49,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Default [StudyManager] implementation.
@@ -63,12 +66,17 @@ internal class StudyManagerImpl @Suppress("detekt:LongParameterList") constructo
     private val bundleStore: BundleStore,
     private val mapper: StudyEnrollmentMapper,
     private val scope: CoroutineScope,
+    private val healthCollector: StudyHealthCollector?,
     environment: StudyEnvironment = StudyEnvironment(),
 ) : StudyManager {
 
     private val logger by groveLogger()
-    private val preferredLocale: Locale = environment.preferredLocale
+
+    @Volatile
+    private var preferredLocale: Locale = environment.preferredLocale
     private val zone: ZoneId = timeProvider.currentZone()
+    private val knownBundles = ConcurrentHashMap<UUID, StudyBundle>()
+    private val healthConfigurationMutex = Mutex()
 
     override val enrollments: Flow<List<StudyEnrollment>> =
         enrollmentDao.observeAll().map { entities -> entities.map { mapper.mapModel(it) } }
@@ -120,16 +128,27 @@ internal class StudyManagerImpl @Suppress("detekt:LongParameterList") constructo
         // Anchored to the enrollment date rather than the current moment, so that a participant
         // enrolling with an earlier date resumes their existing timeline instead of restarting it.
         handleLifecycleEvent(StudyLifecycleEvent.Activation, enrollment, storedBundle, date)
-        setupBackgroundHealthDataCollection(storedBundle)
+        updateHealthConfiguration()
     }
 
     override suspend fun unenroll(enrollment: StudyEnrollment) {
         deleteTasksWithPrefix(StudyTaskId.prefix(enrollment.studyId))
         enrollmentDao.delete(enrollment.id.toString())
         bundleStore.delete(enrollment.id)
+        updateHealthConfiguration()
     }
 
     override suspend fun informAboutStudies(studyBundles: Collection<StudyBundle>) {
+        studyBundles.forEach { bundle ->
+            knownBundles.merge(bundle.studyDefinition.id, bundle) { known, informed ->
+                if (informed.studyDefinition.studyRevision >= known.studyDefinition.studyRevision) informed else known
+            }
+        }
+        updateOutdatedEnrollments(studyBundles)
+        updateHealthConfiguration()
+    }
+
+    private suspend fun updateOutdatedEnrollments(studyBundles: Collection<StudyBundle>) {
         for (bundle in studyBundles) {
             val definition = bundle.studyDefinition
             val outdated = enrollmentDao.byStudyId(definition.id.toString())
@@ -140,7 +159,6 @@ internal class StudyManagerImpl @Suppress("detekt:LongParameterList") constructo
                 enrollmentDao.updateRevision(entity.id, definition.studyRevision.toLong())
                 val updated = mapper.mapModel(entity).copy(studyRevision = definition.studyRevision)
                 registerStudyTasks(updated, storedBundle)
-                setupBackgroundHealthDataCollection(storedBundle)
             }
         }
     }
@@ -178,11 +196,21 @@ internal class StudyManagerImpl @Suppress("detekt:LongParameterList") constructo
         }
     }
 
+    override fun updatePreferredLocale(locale: Locale) {
+        if (locale == preferredLocale) return
+        preferredLocale = locale
+        scope.launch { registerStoredEnrollmentTasks() }
+    }
+
     private suspend fun reconcileStoredEnrollments() {
+        registerStoredEnrollmentTasks()
+        updateHealthConfiguration()
+    }
+
+    private suspend fun registerStoredEnrollmentTasks() {
         for (enrollment in studyEnrollments()) {
             val bundle = bundleStore.open(enrollment.id) ?: continue
             registerStudyTasks(enrollment, bundle)
-            setupBackgroundHealthDataCollection(bundle)
         }
     }
 
@@ -387,13 +415,16 @@ internal class StudyManagerImpl @Suppress("detekt:LongParameterList") constructo
     }
 
     /**
-     * Records the study's declared health-data sample types. Background collection itself is
-     * coordinated outside this module.
+     * Brings the health configuration in line with the known and enrolled studies, when the manager
+     * has a [healthCollector].
      */
-    private fun setupBackgroundHealthDataCollection(bundle: StudyBundle) {
-        val sampleTypes = bundle.studyDefinition.healthDataCollectionComponents.flatMap { it.sampleTypes }
-        if (sampleTypes.isNotEmpty()) {
-            logger.i { "Study ${bundle.id} declares health data collection for: $sampleTypes" }
+    private suspend fun updateHealthConfiguration() {
+        val healthCollector = healthCollector ?: return
+        healthConfigurationMutex.withLock {
+            healthCollector.update(
+                knownBundles = knownBundles.values.toList(),
+                enrolledBundles = studyEnrollments().mapNotNull { bundleStore.open(it.id) },
+            )
         }
     }
 

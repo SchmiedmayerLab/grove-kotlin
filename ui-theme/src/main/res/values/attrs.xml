@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+This source file is part of the Grove open-source project
+
+SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
+
+SPDX-License-Identifier: MIT
+-->
+
+<resources>
+    <!--
+    The color roles of the Grove palette a theme uses, for View-based components that are themed
+    from XML. Every Grove palette theme sets all of them.
+    -->
+    <attr name="groveColorPrimary" format="color" />
+    <attr name="groveColorOnPrimary" format="color" />
+    <attr name="groveColorPrimaryContainer" format="color" />
+    <attr name="groveColorOnPrimaryContainer" format="color" />
+    <attr name="groveColorInversePrimary" format="color" />
+    <attr name="groveColorSecondary" format="color" />
+    <attr name="groveColorOnSecondary" format="color" />
+    <attr name="groveColorSecondaryContainer" format="color" />
+    <attr name="groveColorOnSecondaryContainer" format="color" />
+    <attr name="groveColorTertiary" format="color" />
+    <attr name="groveColorOnTertiary" format="color" />
+    <attr name="groveColorTertiaryContainer" format="color" />
+    <attr name="groveColorOnTertiaryContainer" format="color" />
+    <attr name="groveColorError" format="color" />
+    <attr name="groveColorOnError" format="color" />
+    <attr name="groveColorErrorContainer" format="color" />
+    <attr name="groveColorOnErrorContainer" format="color" />
+    <attr name="groveColorBackground" format="color" />
+    <attr name="groveColorOnBackground" format="color" />
+    <attr name="groveColorSurface" format="color" />
+    <attr name="groveColorOnSurface" format="color" />
+    <attr name="groveColorSurfaceVariant" format="color" />
+    <attr name="groveColorOnSurfaceVariant" format="color" />
+    <attr name="groveColorInverseSurface" format="color" />
+    <attr name="groveColorInverseOnSurface" format="color" />
+    <attr name="groveColorOutline" format="color" />
+    <attr name="groveColorOutlineVariant" format="color" />
+    <attr name="groveColorSurfaceBright" format="color" />
+    <attr name="groveColorSurfaceDim" format="color" />
+    <attr name="groveColorSurfaceContainerLowest" format="color" />
+    <attr name="groveColorSurfaceContainerLow" format="color" />
+    <attr name="groveColorSurfaceContainer" format="color" />
+    <attr name="groveColorSurfaceContainerHigh" format="color" />
+    <attr name="groveColorSurfaceContainerHighest" format="color" />
+</resources>

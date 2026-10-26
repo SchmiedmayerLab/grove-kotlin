@@ -27,12 +27,14 @@ import org.grovealliance.ui.StringResource
  * ```kotlin
  * override val configuration = Configuration {
  *     accountConfiguration(
- *         service = FirebaseAccountService(
- *             providers = FirebaseAuthProviders(
- *                 FirebaseAuthProvider.Anonymous,
- *                 FirebaseAuthProvider.SignInWithGoogle(serverClientId = "your-server-client-id"),
+ *         service = {
+ *             FirebaseAccountService(
+ *                 providers = FirebaseAuthProviders(
+ *                     FirebaseAuthProvider.Anonymous,
+ *                     FirebaseAuthProvider.SignInWithGoogle(serverClientId = "your-server-client-id"),
+ *                 )
  *             )
- *         ),
+ *         },
  *         storageProvider = FirestoreAccountStorage(collectionPath = "users"),
  *     )
  * }

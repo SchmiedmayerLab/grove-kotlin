@@ -27,3 +27,9 @@ internal interface HealthConfigurationComponent {
      */
     suspend fun configure(client: DefaultHealthClient, standard: HealthConstraint?)
 }
+
+/**
+ * The combined data access requirements of all components.
+ */
+internal fun Set<HealthConfigurationComponent>.dataAccessRequirements(): HealthDataAccessRequirements =
+    fold(HealthDataAccessRequirements()) { acc, component -> acc + component.dataAccessRequirements }

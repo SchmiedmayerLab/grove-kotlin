@@ -33,7 +33,7 @@ import org.grovealliance.ui.validation.ValidationRule
  *
  *     override val configuration = Configuration {
  *         accountConfiguration(
- *             service = FirebaseAccountService(),
+ *             service = { FirebaseAccountService() },
  *             storageProvider = FirestoreAccountStorage(collectionPath = "users"),
  *             configuration = {
  *                 requires(key = AccountKeys.accountId)
@@ -63,11 +63,13 @@ interface FirebaseAccountService : AccountService {
          * ```kotlin
          * override val configuration = Configuration {
          *     accountConfiguration(
-         *         service = FirebaseAccountService(
-         *             providers = FirebaseAuthProviders.Default,
-         *             emulatorSettings = if (BuildConfig.DEBUG) FirebaseEmulatorSettings(host, port) else null,
-         *             passwordValidation = null,
-         *         ),
+         *         service = {
+         *             FirebaseAccountService(
+         *                 providers = FirebaseAuthProviders.Default,
+         *                 emulatorSettings = if (BuildConfig.DEBUG) FirebaseEmulatorSettings(host, port) else null,
+         *                 passwordValidation = null,
+         *             )
+         *         },
          *         storageProvider = FirestoreAccountStorage(collectionPath = "users"),
          *     )
          * }

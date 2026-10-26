@@ -40,7 +40,7 @@ SPDX-License-Identifier: MIT
     <string name="account_login_sign_up">Sign up</string>
     <string name="account_login_user_id_email">E-Mail Address</string>
     <string name="account_login_user_id_username">Username</string>
-    <string name="account_login_invalid_user_id_prefix">Please enter a valid&#160;</string>
+    <string name="account_login_invalid_user_id">Please enter a valid %1$s</string>
     <string name="account_login_password_reset_success">Password reset email sent.</string>
     <string name="account_login_password_reset_failed">Password reset failed. Please try again.</string>
     <string name="account_login_failed">Login failed. Please try again.</string>
@@ -122,4 +122,8 @@ SPDX-License-Identifier: MIT
     <!-- onboarding -->
     <string name="onboarding_next">Next</string>
     <string name="task_completed">Completed</string>
+
+    <!-- scheduler notifications -->
+    <string name="scheduler_notifications_channel_name">Task Reminders</string>
+    <string name="scheduler_notifications_channel_description">Reminders for your upcoming tasks.</string>
 </resources>

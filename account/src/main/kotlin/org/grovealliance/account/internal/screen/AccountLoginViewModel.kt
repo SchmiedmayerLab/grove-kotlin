@@ -149,7 +149,7 @@ internal class AccountLoginViewModel(
         viewModelScope.launch {
             val userIdError = validateUserId()
             if (userIdError != null) {
-                showErrorToast(message = StringResource(Strings.account_login_invalid_user_id_prefix) + userIdLabel())
+                showErrorToast(message = StringResource(Strings.account_login_invalid_user_id, userIdLabel()))
                 return@launch
             }
             accountService.resetPassword(userId)

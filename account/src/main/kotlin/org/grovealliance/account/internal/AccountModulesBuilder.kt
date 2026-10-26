@@ -21,13 +21,14 @@ import org.grovealliance.account.internal.screen.AccountSheetController
 import org.grovealliance.account.internal.screen.AccountSignUpSheetController
 import org.grovealliance.core.Configuration
 import org.grovealliance.core.ConfigurationBuilder
+import org.grovealliance.core.DependenciesGraph
 import org.grovealliance.core.viewmodel.viewModel
 
 /**
  * Registers the necessary account related modules for Grove based on the provided configuration.
  */
 internal class AccountModulesBuilder internal constructor(
-    private val service: AccountService,
+    private val service: DependenciesGraph.() -> AccountService,
     private val storageProvider: AccountStorageProvider?,
     private val initialDetails: AccountDetails?,
     private val codecConfig: AccountDetailsCodecConfig,
@@ -39,10 +40,10 @@ internal class AccountModulesBuilder internal constructor(
         storageProvider?.let { module { it } }
         module { ExternalAccountStorage(storageProvider = storageProvider) }
         singleton { codecConfig }
-        module { service }
+        module { service() }
         module<Account> {
             AccountImpl(
-                service = service,
+                service = dependency(),
                 configuration = keysBuilder.buildConfiguration(),
                 initialDetails = initialDetails,
             )

@@ -7,6 +7,7 @@
 
 package org.grovealliance.scheduler.internal
 
+import android.content.Intent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -15,6 +16,7 @@ import kotlinx.coroutines.sync.withLock
 import org.grovealliance.core.time.TimeProvider
 import org.grovealliance.scheduler.Event
 import org.grovealliance.scheduler.InstantRange
+import org.grovealliance.scheduler.OpenedTaskNotification
 import org.grovealliance.scheduler.ScheduleDuration
 import org.grovealliance.scheduler.Scheduler
 import org.grovealliance.scheduler.SchedulerNotifications
@@ -49,6 +51,9 @@ internal class SchedulerNotificationsImpl(
     override fun scheduleNotificationsRefresh() {
         scope.launch { refresh() }
     }
+
+    override fun openedNotification(intent: Intent): OpenedTaskNotification? =
+        notificationScheduler.openedNotification(intent = intent)
 
     private suspend fun refresh() = refreshMutex.withLock {
         val now = timeProvider.nowInstant()

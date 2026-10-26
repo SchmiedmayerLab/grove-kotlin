@@ -60,7 +60,7 @@ class SampleApplication : Application(), GroveApplication, HealthConstraint {
         }
 
         accountConfiguration(
-            service = InMemoryAccountService(),
+            service = { InMemoryAccountService() },
             storageProvider = InMemoryAccountStorageProvider(),
             configuration = {
                 requires(key = AccountKeys.accountId)

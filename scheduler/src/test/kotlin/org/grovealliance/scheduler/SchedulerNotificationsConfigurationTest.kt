@@ -8,6 +8,7 @@
 package org.grovealliance.scheduler
 
 import com.google.common.truth.Truth.assertThat
+import org.grovealliance.resources.Strings
 import org.junit.Test
 import java.time.Duration
 
@@ -25,14 +26,22 @@ class SchedulerNotificationsConfigurationTest {
     }
 
     @Test
+    fun `default uses a generic icon and the grove channel`() {
+        // when
+        val configuration = SchedulerNotificationsConfiguration.DEFAULT
+
+        // then
+        assertThat(configuration.smallIcon).isEqualTo(android.R.drawable.ic_popup_reminder)
+        assertThat(configuration.color).isNull()
+        assertThat(configuration.channelName).isEqualTo(Strings.scheduler_notifications_channel_name)
+        assertThat(configuration.channelDescription).isEqualTo(Strings.scheduler_notifications_channel_description)
+    }
+
+    @Test
     fun `rejects a non-positive limit`() {
         // when / then
         assertThrows<IllegalArgumentException> {
-            SchedulerNotificationsConfiguration(
-                limit = 0,
-                window = Duration.ofDays(1),
-                allDayNotificationTime = NotificationTime(hour = 9),
-            )
+            SchedulerNotificationsConfiguration.DEFAULT.copy(limit = 0)
         }
     }
 
@@ -40,11 +49,7 @@ class SchedulerNotificationsConfigurationTest {
     fun `rejects a non-positive window`() {
         // when / then
         assertThrows<IllegalArgumentException> {
-            SchedulerNotificationsConfiguration(
-                limit = 1,
-                window = Duration.ZERO,
-                allDayNotificationTime = NotificationTime(hour = 9),
-            )
+            SchedulerNotificationsConfiguration.DEFAULT.copy(window = Duration.ZERO)
         }
     }
 

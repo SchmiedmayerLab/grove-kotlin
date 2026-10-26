@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+This source file is part of the Grove open-source project
+
+SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
+
+SPDX-License-Identifier: MIT
+-->
+
+<resources>
+    <!--
+    The questionnaire renderer theme in the colors of the host activity's Grove palette theme. Set it
+    as the `questionnaire_theme` of a theme deriving from a Grove palette theme such as
+    `Theme.Grove.CardinalRed`. The host theme also needs `viewInflaterClass` set to
+    `com.google.android.material.theme.MaterialComponentsViewInflater`, or the renderer's buttons
+    ignore their Material styles.
+    -->
+    <style name="Theme.Grove.Questionnaire" parent="Theme.Questionnaire">
+        <item name="colorPrimary">?attr/groveColorPrimary</item>
+        <item name="colorOnPrimary">?attr/groveColorOnPrimary</item>
+        <item name="colorPrimaryContainer">?attr/groveColorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">?attr/groveColorOnPrimaryContainer</item>
+        <item name="colorPrimaryInverse">?attr/groveColorInversePrimary</item>
+        <item name="colorSecondary">?attr/groveColorSecondary</item>
+        <item name="colorOnSecondary">?attr/groveColorOnSecondary</item>
+        <item name="colorSecondaryContainer">?attr/groveColorSecondaryContainer</item>
+        <item name="colorOnSecondaryContainer">?attr/groveColorOnSecondaryContainer</item>
+        <item name="colorTertiary">?attr/groveColorTertiary</item>
+        <item name="colorOnTertiary">?attr/groveColorOnTertiary</item>
+        <item name="colorTertiaryContainer">?attr/groveColorTertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">?attr/groveColorOnTertiaryContainer</item>
+        <item name="colorError">?attr/groveColorError</item>
+        <item name="colorOnError">?attr/groveColorOnError</item>
+        <item name="colorErrorContainer">?attr/groveColorErrorContainer</item>
+        <item name="colorOnErrorContainer">?attr/groveColorOnErrorContainer</item>
+        <item name="android:colorBackground">?attr/groveColorBackground</item>
+        <item name="colorOnBackground">?attr/groveColorOnBackground</item>
+        <item name="colorSurface">?attr/groveColorSurface</item>
+        <item name="colorOnSurface">?attr/groveColorOnSurface</item>
+        <item name="colorSurfaceVariant">?attr/groveColorSurfaceVariant</item>
+        <item name="colorOnSurfaceVariant">?attr/groveColorOnSurfaceVariant</item>
+        <item name="colorSurfaceInverse">?attr/groveColorInverseSurface</item>
+        <item name="colorOnSurfaceInverse">?attr/groveColorInverseOnSurface</item>
+        <item name="colorOutline">?attr/groveColorOutline</item>
+        <item name="colorOutlineVariant">?attr/groveColorOutlineVariant</item>
+        <item name="colorSurfaceBright">?attr/groveColorSurfaceBright</item>
+        <item name="colorSurfaceDim">?attr/groveColorSurfaceDim</item>
+        <item name="colorSurfaceContainerLowest">?attr/groveColorSurfaceContainerLowest</item>
+        <item name="colorSurfaceContainerLow">?attr/groveColorSurfaceContainerLow</item>
+        <item name="colorSurfaceContainer">?attr/groveColorSurfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">?attr/groveColorSurfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">?attr/groveColorSurfaceContainerHighest</item>
+    </style>
+</resources>
