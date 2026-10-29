@@ -285,7 +285,9 @@ internal class FirebaseAccountServiceImpl(
         }
 
         val externalModifications = modifications.copy().removeModifications(SUPPORTED_KEYS)
-        if (!externalModifications.isEmpty) {
+        val externalResult = if (externalModifications.isEmpty) {
+            Result.success(Unit)
+        } else {
             externalAccountStorage.updateExternalStorage(
                 accountId = user.uid,
                 modifications = externalModifications,
@@ -297,6 +299,7 @@ internal class FirebaseAccountServiceImpl(
         currentFirebaseUser?.let { refreshed ->
             updateUser(refreshed)
         }
+        externalResult.getOrThrow()
     }
 
     private suspend fun signUpWithCredentialInternal(credential: AuthCredential) {
@@ -370,19 +373,23 @@ internal class FirebaseAccountServiceImpl(
                 .retrieveExternalStorage(accountId = user.uid, keys = unsupportedKeys.keys())
                 .getOrElse { AccountDetails().apply { isIncomplete = true } }
             if (currentFirebaseUser?.uid != user.uid) return
-            details.addContents(externalDetails)
-            account.supplyUserDetails(details)
+            account.supplyUserDetails(buildUserDetails(user = user, addingContentsOf = externalDetails))
         }
     }
 
+    /**
+     * The details [user] owns, on top of [addingContentsOf]. The values Firebase owns win, and the
+     * flags are set one by one so that a flag the added details carry, such as
+     * [AccountDetails.isIncomplete], is kept.
+     */
     private fun buildUserDetails(user: FirebaseUser, addingContentsOf: AccountDetails? = null): AccountDetails {
         return AccountDetails().apply {
+            addingContentsOf?.let { addContents(addingContentsOf) }
             this[AccountKeys.accountId::class] = user.uid
             user.displayName?.let { this[AccountKeys.name::class] = PersonName(fullName = it) }
             user.email?.let { this[AccountKeys.userId::class] = it }
             this.isVerified = user.isEmailVerified
             this.isAnonymousUser = user.isAnonymous
-            addingContentsOf?.let { addContents(addingContentsOf) }
         }
     }
 

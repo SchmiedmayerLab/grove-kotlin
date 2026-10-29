@@ -9,6 +9,7 @@ package org.grovealliance.consent
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -23,10 +24,15 @@ import org.grovealliance.core.viewmodel.groveViewModel
  * [onConsent] is invoked with the completed [ConsentResponses] once the user submits the form.
  * It is a suspending callback, allowing callers to perform async work (e.g. persisting the
  * responses) before the screen considers consent finalised.
+ *
+ * [onFormChanged], when set, receives the form's [ConsentFormState] whenever the signer changes a
+ * response, for example to offer sharing the form once it is complete. It is no longer called once
+ * the screen leaves the composition.
  */
 @Composable
 fun ConsentScreen(
     onConsent: suspend (ConsentResponses) -> Unit,
+    onFormChanged: ((ConsentFormState) -> Unit)? = null,
 ) {
     val viewModel = groveViewModel<ConsentViewModel>()
     val layout = viewModel.layout
@@ -35,5 +41,10 @@ fun ConsentScreen(
 
     LaunchedEffect(onConsent) {
         layout.actionSink.push(ConsentAction.OnConsentGivenCallbackUpdated(currentOnConsent))
+    }
+
+    DisposableEffect(onFormChanged) {
+        layout.actionSink.push(ConsentAction.OnFormChangedCallbackUpdated(onFormChanged))
+        onDispose { layout.actionSink.push(ConsentAction.OnFormChangedCallbackUpdated(callback = null)) }
     }
 }

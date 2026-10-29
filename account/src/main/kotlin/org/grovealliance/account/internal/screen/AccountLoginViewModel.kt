@@ -27,6 +27,7 @@ import org.grovealliance.resources.Strings
 import org.grovealliance.ui.ActionSink
 import org.grovealliance.ui.ActionSource
 import org.grovealliance.ui.AsyncTextButton
+import org.grovealliance.ui.ComposableContent
 import org.grovealliance.ui.DismissStyle
 import org.grovealliance.ui.EventSink
 import org.grovealliance.ui.GroveInputField
@@ -134,6 +135,7 @@ internal class AccountLoginViewModel(
                 }
                 scaffoldState.setAppBar(newAppBar)
             }
+            is AccountLoginAction.SetFooter -> layoutState.update { it.copy(footer = action.footer) }
         }
     }
 
@@ -237,4 +239,5 @@ internal sealed interface AccountLoginEvent {
 
 internal sealed interface AccountLoginAction {
     data class SetDismissStyle(val style: DismissStyle) : AccountLoginAction
+    data class SetFooter(val footer: ComposableContent?) : AccountLoginAction
 }

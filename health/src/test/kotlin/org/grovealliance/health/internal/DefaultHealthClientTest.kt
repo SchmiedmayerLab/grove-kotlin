@@ -21,6 +21,7 @@ import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.response.ChangesResponse
 import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.testing.AggregationResult
 import androidx.health.connect.client.testing.FakeHealthConnectClient
@@ -449,6 +450,90 @@ class DefaultHealthClientTest {
 
         // then
         assertThat(client.dataAccessRequirements.read).containsExactly(RecordType.steps, RecordType.weight)
+    }
+
+    @Test
+    fun `record queries drain every page even when a page is empty`() = runTest {
+        // given
+        permissionController.grantPermission(STEPS_READ)
+        val requestedPages = mutableListOf<String?>()
+        fakeHealthConnectClient.overrides.readRecords = MutableStub { request: ReadRecordsRequest<*> ->
+            requestedPages += request.pageToken
+            ReadRecordsResponse(records = emptyList<StepsRecord>(), pageToken = if (request.pageToken == null) "second" else null)
+        }
+
+        // when
+        client.query(type = RecordType.steps, timeRange = TWO_DAYS)
+
+        // then
+        assertThat(requestedPages).containsExactly(null, "second").inOrder()
+    }
+
+    @Test
+    fun `changes drain all pages before returning their next token`() = runTest {
+        // given
+        permissionController.grantPermission(STEPS_READ)
+        permissionController.grantPermission(HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
+        val requestedTokens = mutableListOf<String>()
+        fakeHealthConnectClient.overrides.getChanges = MutableStub { token: String ->
+            requestedTokens += token
+            ChangesResponse(
+                changes = emptyList(),
+                nextChangesToken = if (token == "first") "second" else "third",
+                hasMore = token == "first",
+                changesTokenExpired = false,
+            )
+        }
+
+        // when
+        val changes = client.changes(type = RecordType.steps, token = "first").getOrThrow()
+
+        // then
+        assertThat(requestedTokens).containsExactly("first", "second").inOrder()
+        assertThat(changes.nextToken).isEqualTo("third")
+        assertThat(changes.isReset).isFalse()
+    }
+
+    @Test
+    fun `expired changes require a new full snapshot and never confirm deletions`() = runTest {
+        // given
+        permissionController.grantPermission(STEPS_READ)
+        permissionController.grantPermission(HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
+        fakeHealthConnectClient.overrides.getChanges = MutableStub { _: String ->
+            ChangesResponse(changes = emptyList(), nextChangesToken = "expired", hasMore = false, changesTokenExpired = true)
+        }
+
+        // when
+        val changes = client.changes(type = RecordType.steps, token = "old").getOrThrow()
+
+        // then
+        assertThat(changes.isReset).isTrue()
+        assertThat(changes.deletedIds).isEmpty()
+        assertThat(changes.nextToken).isNotEqualTo("old")
+    }
+
+    @Test
+    fun `missing read permission is a failed change read`() = runTest {
+        // when
+        val result = client.changes(type = RecordType.steps, token = null)
+
+        // then
+        assertThat(result.isFailure).isTrue()
+    }
+
+    @Test
+    fun `read access reports type history and background permissions separately`() = runTest {
+        // given
+        permissionController.grantPermission(STEPS_READ)
+        permissionController.grantPermission(HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY)
+
+        // when
+        val access = client.readAccess(type = RecordType.steps)
+
+        // then
+        assertThat(access.records).isTrue()
+        assertThat(access.history).isTrue()
+        assertThat(access.background).isFalse()
     }
 
     @Suppress("UNCHECKED_CAST")

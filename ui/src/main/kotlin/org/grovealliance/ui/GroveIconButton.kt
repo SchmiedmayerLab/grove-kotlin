@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 
 /**
  * A [ComposableContent] wrapper around an icon-only button.
@@ -92,9 +93,14 @@ fun GroveIconButtonComposable(
         enabled = enabled,
         onClick = onClick,
     ) {
-        image.Content()
+        image.Content(modifier = Modifier.alpha(if (enabled) 1f else DISABLED_ICON_ALPHA))
     }
 }
+
+/**
+ * The opacity of a disabled icon button's icon, following Material's disabled content emphasis.
+ */
+private const val DISABLED_ICON_ALPHA = 0.38f
 
 /**
  * Displays a close icon button using the default close glyph.

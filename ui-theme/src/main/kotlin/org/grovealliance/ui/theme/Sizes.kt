@@ -69,3 +69,107 @@ object Sizes {
             get() = 20.dp
     }
 }
+
+/**
+ * A size of the theme, named rather than resolved, so it can be stored, compared and passed
+ * around outside composition and resolved with [resolve] where it is laid out.
+ *
+ * The tokens are grouped like [Sizes], each standing for the property of the same name. [Custom]
+ * passes a fixed size through unchanged.
+ */
+sealed interface SizeToken {
+
+    /**
+     * The sizes of [Sizes.Icon].
+     */
+    sealed interface Icon : SizeToken {
+
+        /**
+         * Resolves to [Sizes.Icon.extraSmall].
+         */
+        data object ExtraSmall : Icon
+
+        /**
+         * Resolves to [Sizes.Icon.small].
+         */
+        data object Small : Icon
+
+        /**
+         * Resolves to [Sizes.Icon.medium].
+         */
+        data object Medium : Icon
+
+        /**
+         * Resolves to [Sizes.Icon.large].
+         */
+        data object Large : Icon
+
+        /**
+         * Resolves to [Sizes.Icon.extraLarge].
+         */
+        data object ExtraLarge : Icon
+    }
+
+    /**
+     * The sizes of [Sizes.Border].
+     */
+    sealed interface Border : SizeToken {
+
+        /**
+         * Resolves to [Sizes.Border.small].
+         */
+        data object Small : Border
+
+        /**
+         * Resolves to [Sizes.Border.medium].
+         */
+        data object Medium : Border
+    }
+
+    /**
+     * The sizes of [Sizes.Content].
+     */
+    sealed interface Content : SizeToken {
+
+        /**
+         * Resolves to [Sizes.Content.extraLarge].
+         */
+        data object ExtraLarge : Content
+
+        /**
+         * Resolves to [Sizes.Content.large].
+         */
+        data object Large : Content
+
+        /**
+         * Resolves to [Sizes.Content.small].
+         */
+        data object Small : Content
+    }
+
+    /**
+     * A fixed size, resolved to itself whatever the theme.
+     *
+     * @param size the size itself
+     */
+    data class Custom(val size: Dp) : SizeToken
+}
+
+/**
+ * The size this token stands for in the current theme.
+ */
+@Composable
+@ReadOnlyComposable
+fun SizeToken.resolve(): Dp = when (this) {
+    SizeToken.Icon.ExtraSmall -> Sizes.Icon.extraSmall
+    SizeToken.Icon.Small -> Sizes.Icon.small
+    SizeToken.Icon.Medium -> Sizes.Icon.medium
+    SizeToken.Icon.Large -> Sizes.Icon.large
+    SizeToken.Icon.ExtraLarge -> Sizes.Icon.extraLarge
+    SizeToken.Border.Small -> Sizes.Border.small
+    SizeToken.Border.Medium -> Sizes.Border.medium
+    SizeToken.Content.ExtraLarge -> Sizes.Content.extraLarge
+    SizeToken.Content.Large -> Sizes.Content.large
+    SizeToken.Content.Small -> Sizes.Content.small
+    is SizeToken.Custom -> size
+}

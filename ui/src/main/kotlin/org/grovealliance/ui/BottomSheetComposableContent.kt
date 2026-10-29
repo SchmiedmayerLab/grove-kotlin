@@ -11,8 +11,14 @@ package org.grovealliance.ui
 
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -129,10 +135,16 @@ interface BottomSheetComposableContent : ComposableContent {
             }
         }
         ModalBottomSheet(
-            modifier = modifier,
+            // Keeps a sheet as tall as the screen below the status bar, with a padding that does
+            // not depend on the sheet's offset.
+            modifier = modifier.windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top)),
             sheetState = state,
             onDismissRequest = onDismiss,
             dragHandle = dragHandle,
+            // The sheet consumes top insets by its current offset, so top insets padded here
+            // would change the sheet's height while it moves, and with it the offset it settles
+            // at: a fast fling then never settles. Only bottom insets stay independent of it.
+            contentWindowInsets = { WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom) },
         ) {
             Box(
                 modifier = containerModifier()

@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ data class GroveInputField(
     val validationMessage: StringResource? = null,
     val keyboardType: KeyboardType = KeyboardType.Text,
     val imeAction: ImeAction = ImeAction.Default,
+    val textAlign: TextAlign = TextAlign.Start,
     val onValueChanged: (String) -> Unit,
 ) : ComposableContent {
 
@@ -72,6 +74,7 @@ data class GroveInputField(
             hideContent = hideContent,
             showBorder = showBorder,
             validationMessage = validationMessage?.text(),
+            textAlign = textAlign,
             onValueChanged = onValueChanged,
         )
     }
@@ -88,6 +91,7 @@ fun GroveInputFieldComposable(
     validationMessage: String? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
+    textAlign: TextAlign = TextAlign.Start,
     onValueChanged: (String) -> Unit,
 ) {
     var isContentVisible by remember { mutableStateOf(false) }
@@ -113,7 +117,7 @@ fun GroveInputFieldComposable(
             value = value,
             onValueChange = onValueChanged,
             singleLine = true,
-            textStyle = TextStyles.bodyLarge.copy(color = LocalContentColor.current),
+            textStyle = TextStyles.bodyLarge.copy(color = LocalContentColor.current, textAlign = textAlign),
             keyboardOptions = KeyboardOptions(
                 keyboardType = resolvedKeyboardType,
                 imeAction = imeAction,
@@ -153,6 +157,8 @@ fun GroveInputFieldComposable(
                                 text = placeholder,
                                 color = Colors.onSurfaceVariant,
                                 style = TextStyles.bodyLarge,
+                                textAlign = textAlign,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                         innerTextField()

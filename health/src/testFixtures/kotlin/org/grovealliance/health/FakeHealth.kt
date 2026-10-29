@@ -21,11 +21,52 @@ import java.time.Instant
 import kotlin.time.Duration
 
 /**
- * A [Health] that records the runtime configuration it is given and reads no data.
+ * A [Health] with configurable records, permissions and read failures, recording its query ranges.
  */
 @Suppress("TooManyFunctions")
 class FakeHealth : Health {
     private val authorizedToRead = mutableSetOf<AnyRecordType>()
+    private val aggregateResults = mutableMapOf<AggregateMetric<*>, Any?>()
+    private val aggregationBuckets = mutableMapOf<AggregateMetric<*>, List<AggregationBucket<*>>>()
+    private val changeResults = mutableMapOf<AnyRecordType, Result<HealthChanges<*>>>()
+
+    fun <T : Any> setAggregate(metric: AggregateMetric<T>, value: T?) {
+        aggregateResults[metric] = value
+    }
+
+    fun <T : Any> setAggregationBuckets(metric: AggregateMetric<T>, buckets: List<AggregationBucket<T>>) {
+        aggregationBuckets[metric] = buckets
+    }
+
+    fun <T : Record> setChanges(type: RecordType<T>, result: Result<HealthChanges<T>>) {
+        changeResults[type] = result
+    }
+
+    private val recordsByType = mutableMapOf<AnyRecordType, List<Record>>()
+    private val queryHistory = mutableListOf<HealthQueryTimeRange>()
+    private var queryFailure: Exception? = null
+    private var historyReadable = false
+    private var backgroundReadable = false
+
+    val queries: List<HealthQueryTimeRange> get() = queryHistory.toList()
+
+    fun <T : Record> setRecords(type: RecordType<T>, records: List<T>) {
+        recordsByType[type] = records
+        queryFailure = null
+    }
+
+    fun setQueryFailure(error: Exception) {
+        queryFailure = error
+    }
+
+    fun setHistoryReadable(value: Boolean) {
+        historyReadable = value
+    }
+
+    fun setBackgroundReadable(value: Boolean) {
+        backgroundReadable = value
+    }
+
     private var runtimeRequirements = HealthDataAccessRequirements()
 
     /**
@@ -71,6 +112,23 @@ class FakeHealth : Health {
         configurationUpdateCount += 1
     }
 
+    override suspend fun readAccess(type: AnyRecordType): HealthReadAccess = HealthReadAccess(
+        records = type in authorizedToRead,
+        history = historyReadable,
+        background = backgroundReadable,
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun <T : Record> changes(type: RecordType<T>, token: String?): Result<HealthChanges<T>> =
+        changeResults[type] as Result<HealthChanges<T>>? ?: Result.success(
+            HealthChanges(
+                added = emptyList(),
+                deletedIds = emptySet(),
+                nextToken = token ?: "initial-token",
+                isReset = token == null,
+            ),
+        )
+
     override suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean = type in authorizedToRead
 
     override suspend fun isAuthorizedToWrite(type: AnyRecordType): Boolean = false
@@ -96,7 +154,12 @@ class FakeHealth : Health {
         sortedBy: QuerySort,
         limit: Int,
         predicate: ((T) -> Boolean)?,
-    ): List<T> = emptyList()
+    ): List<T> {
+        queryHistory += timeRange
+        queryFailure?.let { throw it }
+        @Suppress("UNCHECKED_CAST")
+        return (recordsByType[type].orEmpty() as List<T>).filter { predicate?.invoke(it) ?: true }.take(limit)
+    }
 
     override suspend fun <T : Record> query(
         type: RecordType<T>,
@@ -111,20 +174,31 @@ class FakeHealth : Health {
         type: RecordType<T>,
         timeRange: HealthQueryTimeRange,
         source: String?,
-    ): T? = null
+    ): T? {
+        queryHistory += timeRange
+        queryFailure?.let { throw it }
+        @Suppress("UNCHECKED_CAST")
+        return recordsByType[type]?.lastOrNull() as T?
+    }
 
     override suspend fun <T : Any> aggregate(
         metric: AggregateMetric<T>,
         timeRange: HealthQueryTimeRange,
         source: String?,
-    ): T? = null
+    ): T? {
+        @Suppress("UNCHECKED_CAST")
+        return aggregateResults[metric] as T?
+    }
 
     override suspend fun <T : Any> aggregate(
         metric: AggregateMetric<T>,
         timeRange: HealthQueryTimeRange,
         interval: AggregationInterval,
         source: String?,
-    ): List<AggregationBucket<T>> = emptyList()
+    ): List<AggregationBucket<T>> {
+        @Suppress("UNCHECKED_CAST")
+        return aggregationBuckets[metric].orEmpty() as List<AggregationBucket<T>>
+    }
 
     override fun <T : Record> continuousQuery(
         type: RecordType<T>,

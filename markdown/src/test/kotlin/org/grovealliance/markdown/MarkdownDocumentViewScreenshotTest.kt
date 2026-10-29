@@ -97,6 +97,37 @@ class MarkdownDocumentViewScreenshotTest : ScreenshotTest() {
         }
     }
 
+    @Test
+    fun `MarkdownDocumentView tables screenshot`() {
+        screenshot {
+            MarkdownDocumentView(
+                modifier = Modifier.fillMaxSize(),
+                document = MarkdownDocument.process(
+                    """
+                    Blood pressure is recorded as two numbers:
+
+                    | Category             | Systolic (mmHg) | Diastolic (mmHg) |
+                    | :------------------- | :-------------: | :--------------: |
+                    | Normal               | <120            | <80              |
+                    | Elevated             | 120–129         | <80              |
+                    | Hypertension stage 1 | 130–139         | 80–89            |
+                    | Hypertension stage 2 | ≥140            | ≥90              |
+
+                    Our scoring system helps you see your risk at a glance:
+
+                    | Range      | Score | What it means                                                    |
+                    | :--------: | :---: | :--------------------------------------------------------------- |
+                    | <55 mg/dL  | 100   | Excellent; maximal protection, especially for high-risk patients |
+                    | 55–69      | 90    | Very good; ideal for heart disease patients                      |
+                    | ≥190 mg/dL | 0     | **Severe risk**; urgent action needed                            |
+
+                    Lowering LDL through diet and exercise helps reduce cardiovascular risk.
+                    """.trimIndent()
+                ),
+            )
+        }
+    }
+
     @Composable
     private fun NoticeElement(element: MarkdownBlock.Element) {
         GroveCard(

@@ -37,6 +37,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.grovealliance.core.coroutines.Concurrency
+import org.grovealliance.core.coroutines.runCatchingAsync
 import org.grovealliance.core.lifecycle.AppLifecycle
 import org.grovealliance.core.time.TimeProvider
 import org.grovealliance.health.AggregationBucket
@@ -44,9 +45,11 @@ import org.grovealliance.health.AggregationInterval
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.CollectionMode
 import org.grovealliance.health.Health
+import org.grovealliance.health.HealthChanges
 import org.grovealliance.health.HealthConstraint
 import org.grovealliance.health.HealthDataAccessRequirements
 import org.grovealliance.health.HealthQueryTimeRange
+import org.grovealliance.health.HealthReadAccess
 import org.grovealliance.health.QueryResult
 import org.grovealliance.health.QuerySort
 import org.grovealliance.health.RecordType
@@ -229,22 +232,36 @@ internal class DefaultHealthClient @Suppress("detekt:LongParameterList") constru
             logger.w { "Not authorized to read data of type: ${type.identifier}" }
             return emptyList()
         }
-        val response = healthConnectClient.readRecords(
-            ReadRecordsRequest(
-                recordType = type.type,
-                timeRangeFilter = TimeRangeFilter.between(timeRange.start, timeRange.end),
-                dataOriginFilter = dataOrigins(source),
-                ascendingOrder = sortedBy != QuerySort.BY_START_TIME_DESC,
-                pageSize = limit,
+        if (limit <= 0) return emptyList()
+        val records = mutableListOf<T>()
+        var pageToken: String? = null
+        do {
+            val response = healthConnectClient.readRecords(
+                ReadRecordsRequest(
+                    recordType = type.type,
+                    timeRangeFilter = recordTimeFilter(timeRange = timeRange),
+                    dataOriginFilter = dataOrigins(source),
+                    ascendingOrder = sortedBy != QuerySort.BY_START_TIME_DESC,
+                    pageSize = minOf(RECORD_PAGE_SIZE, limit - records.size),
+                    pageToken = pageToken,
+                ),
             )
-        )
-
-        val filtered = response.records.filter { predicate?.invoke(it) ?: true }
+            records += response.records.filter { predicate?.invoke(it) ?: true }
+            pageToken = response.pageToken
+        } while (pageToken != null && records.size < limit)
         return when (sortedBy) {
-            QuerySort.NONE -> filtered
-            QuerySort.BY_START_TIME_ASC -> filtered.sortedBy { it.startTime() }
-            QuerySort.BY_START_TIME_DESC -> filtered.sortedByDescending { it.startTime() }
-        }
+            QuerySort.NONE -> records
+            QuerySort.BY_START_TIME_ASC -> records.sortedBy { it.startTime() }
+            QuerySort.BY_START_TIME_DESC -> records.sortedByDescending { it.startTime() }
+        }.take(limit)
+    }
+
+    private fun recordTimeFilter(timeRange: HealthQueryTimeRange): TimeRangeFilter = when {
+        timeRange.end == Instant.MAX -> TimeRangeFilter.after(
+            timeRange.start.takeUnless { it == Instant.MIN } ?: Instant.ofEpochMilli(Long.MIN_VALUE),
+        )
+        timeRange.start == Instant.MIN -> TimeRangeFilter.before(timeRange.end)
+        else -> TimeRangeFilter.between(timeRange.start, timeRange.end)
     }
 
     override suspend fun <T : Record> query(
@@ -426,6 +443,53 @@ internal class DefaultHealthClient @Suppress("detekt:LongParameterList") constru
 
     private fun dataOrigins(source: String?): Set<DataOrigin> = source?.let { setOf(DataOrigin(it)) } ?: emptySet()
 
+    override suspend fun readAccess(type: AnyRecordType): HealthReadAccess {
+        val granted = getGrantedPermissions()
+        return HealthReadAccess(
+            records = type.readPermission in granted,
+            history = HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY in granted,
+            background = HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND in granted,
+        )
+    }
+
+    override suspend fun <T : Record> changes(type: RecordType<T>, token: String?): Result<HealthChanges<T>> {
+        if (!isAuthorizedToRead(type = type) || !isAllowedToReadInCurrentLifecycle()) {
+            return Result.failure(SecurityException("Health data read permission is missing"))
+        }
+        return runCatchingAsync {
+            if (token == null) return@runCatchingAsync resetChanges(type = type)
+            var nextToken: String = token
+            val added = mutableListOf<T>()
+            val deleted = mutableSetOf<String>()
+            do {
+                val response = healthConnectClient.getChanges(nextToken)
+                if (response.changesTokenExpired) return@runCatchingAsync resetChanges(type = type)
+                val page = createQueryResult(
+                    response = response,
+                    type = type,
+                    timeRange = HealthQueryTimeRange.ever(),
+                    predicate = null,
+                )
+                added += page.added
+                deleted += page.deletedIds
+                nextToken = response.nextChangesToken
+            } while (response.hasMore)
+            HealthChanges(
+                added = added,
+                deletedIds = deleted,
+                nextToken = nextToken,
+                isReset = false,
+            )
+        }
+    }
+
+    private suspend fun <T : Record> resetChanges(type: RecordType<T>): HealthChanges<T> = HealthChanges(
+        added = emptyList(),
+        deletedIds = emptySet(),
+        nextToken = getChangesToken(type = type),
+        isReset = true,
+    )
+
     override suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean {
         return getGrantedPermissions().contains(type.readPermission)
     }
@@ -567,7 +631,7 @@ internal class DefaultHealthClient @Suppress("detekt:LongParameterList") constru
         return appLifecycle.isInForeground || hasBackgroundPermission()
     }
 
-    private suspend fun getGrantedPermissions(): Set<String> = runCatching {
+    private suspend fun getGrantedPermissions(): Set<String> = runCatchingAsync {
         permissionController.getGrantedPermissions()
     }.getOrElse {
         logger.e(it) { "Failed to get granted permissions" }
@@ -626,5 +690,9 @@ internal class DefaultHealthClient @Suppress("detekt:LongParameterList") constru
         data object Add : CollectorAction
         data object Ignore : CollectorAction
         data class Replace(val index: Int) : CollectorAction
+    }
+
+    private companion object {
+        const val RECORD_PAGE_SIZE = 1000
     }
 }

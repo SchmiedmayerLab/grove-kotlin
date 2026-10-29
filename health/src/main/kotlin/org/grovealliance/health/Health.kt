@@ -259,6 +259,18 @@ interface Health : Module {
     ): Flow<QueryResult<T>>
 
     /**
+     * The read permissions currently granted for [type].
+     */
+    suspend fun readAccess(type: AnyRecordType): HealthReadAccess
+
+    /**
+     * Reads every page of changes since [token]. A missing or expired token returns a fresh token
+     * with [HealthChanges.isReset] set; take a complete snapshot before persisting it.
+     * Permission failures are returned as failures, rather than empty successful changes.
+     */
+    suspend fun <T : Record> changes(type: RecordType<T>, token: String?): Result<HealthChanges<T>>
+
+    /**
      * Checks if the app is authorized to read data of the given [Record] [type].
      *
      * @param type The [Record] type to check read authorization for.

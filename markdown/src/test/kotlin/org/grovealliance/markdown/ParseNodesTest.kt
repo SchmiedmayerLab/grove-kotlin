@@ -428,4 +428,177 @@ class ParseNodesTest {
             MarkdownLink.Web("https://example.com"),
         ).inOrder()
     }
+
+    // --- Tables ---
+
+    @Test
+    fun `it should parse a table with its column alignments`() {
+        // given
+        val text = """
+            | Category | Systolic (mmHg) | Diastolic (mmHg) |
+            | :------- | :-------------: | ---------------: |
+            | Normal   | <120            | <80              |
+            | Elevated | 120–129         | <80              |
+        """.trimIndent()
+
+        // when
+        val nodes = parseNodes(text)
+
+        // then
+        assertThat(nodes).containsExactly(
+            MarkdownNode.Table(
+                columns = listOf(
+                    MarkdownNode.Table.Column(header = "Category", alignment = MarkdownNode.Table.Alignment.Leading),
+                    MarkdownNode.Table.Column(header = "Systolic (mmHg)", alignment = MarkdownNode.Table.Alignment.Center),
+                    MarkdownNode.Table.Column(header = "Diastolic (mmHg)", alignment = MarkdownNode.Table.Alignment.Trailing),
+                ),
+                rows = listOf(
+                    listOf("Normal", "<120", "<80"),
+                    listOf("Elevated", "120–129", "<80"),
+                ),
+            )
+        )
+    }
+
+    @Test
+    fun `it should parse a table without outer pipes`() {
+        // given
+        val text = """
+            Range | Score
+            --- | ---
+            <55 | 100
+        """.trimIndent()
+
+        // when
+        val table = parseNodes(text).single() as MarkdownNode.Table
+
+        // then
+        assertThat(table.columns.map { it.header }).containsExactly("Range", "Score").inOrder()
+        assertThat(table.columns.map { it.alignment }.toSet()).containsExactly(MarkdownNode.Table.Alignment.Leading)
+        assertThat(table.rows).containsExactly(listOf("<55", "100"))
+    }
+
+    @Test
+    fun `it should keep escaped pipes inside a table cell`() {
+        // given
+        val text = """
+            | Expression | Meaning |
+            | --- | --- |
+            | a \| b | either |
+        """.trimIndent()
+
+        // when
+        val table = parseNodes(text).single() as MarkdownNode.Table
+
+        // then
+        assertThat(table.rows).containsExactly(listOf("a | b", "either"))
+    }
+
+    @Test
+    fun `it should give every table row exactly one cell per column`() {
+        // given
+        val text = """
+            | A | B | C |
+            | - | - | - |
+            | 1 |
+            | 1 | 2 | 3 | 4 |
+        """.trimIndent()
+
+        // when
+        val table = parseNodes(text).single() as MarkdownNode.Table
+
+        // then
+        assertThat(table.rows).containsExactly(
+            listOf("1", "", ""),
+            listOf("1", "2", "3"),
+        ).inOrder()
+    }
+
+    @Test
+    fun `it should end a table at the first blank line`() {
+        // given
+        val text = """
+            | A | B |
+            | - | - |
+            | 1 | 2 |
+
+            Lowering LDL reduces risk.
+        """.trimIndent()
+
+        // when
+        val nodes = parseNodes(text)
+
+        // then
+        assertThat(nodes).hasSize(2)
+        assertThat((nodes[0] as MarkdownNode.Table).rows).containsExactly(listOf("1", "2"))
+        assertThat(nodes[1]).isEqualTo(MarkdownNode.Paragraph("Lowering LDL reduces risk."))
+    }
+
+    @Test
+    fun `it should end a table at a heading or list item`() {
+        // given
+        val text = """
+            | A |
+            | - |
+            | 1 |
+            ## Next
+            - item
+        """.trimIndent()
+
+        // when
+        val nodes = parseNodes(text)
+
+        // then
+        assertThat(nodes).containsExactly(
+            MarkdownNode.Table(
+                columns = listOf(MarkdownNode.Table.Column(header = "A", alignment = MarkdownNode.Table.Alignment.Leading)),
+                rows = listOf(listOf("1")),
+            ),
+            MarkdownNode.Heading(2, "Next"),
+            MarkdownNode.ListItem(MarkdownNode.ListStyle.Dash, "item"),
+        ).inOrder()
+    }
+
+    @Test
+    fun `it should not parse a table when the delimiter row does not match the header`() {
+        // given
+        val text = """
+            | A | B |
+            | --- |
+        """.trimIndent()
+
+        // when
+        val nodes = parseNodes(text)
+
+        // then
+        assertThat(nodes.none { it is MarkdownNode.Table }).isTrue()
+    }
+
+    @Test
+    fun `it should keep a pipe in a paragraph as text`() {
+        // given
+        val text = "Either this | or that"
+
+        // when
+        val nodes = parseNodes(text)
+
+        // then
+        assertThat(nodes).containsExactly(MarkdownNode.Paragraph("Either this | or that"))
+    }
+
+    @Test
+    fun `it should detect links inside table cells`() {
+        // given
+        val text = """
+            | Source | Link |
+            | --- | --- |
+            | AHA | https://www.heart.org |
+        """.trimIndent()
+
+        // when
+        val links = parseNodes(text).single().links()
+
+        // then
+        assertThat(links).hasSize(1)
+    }
 }

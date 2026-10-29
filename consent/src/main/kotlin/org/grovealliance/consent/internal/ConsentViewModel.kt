@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.grovealliance.consent.ConsentConfiguration
+import org.grovealliance.consent.ConsentFormState
 import org.grovealliance.consent.ConsentResponses
 import org.grovealliance.consent.SignatureMetadata
 import org.grovealliance.consent.SignatureStroke
@@ -63,6 +64,7 @@ internal class ConsentViewModel(
     private val actionSource = ActionSource(::onAction)
     private val actionSink = actionSource.sink<ConsentAction>()
     private val screenState = MutableStateFlow<ConsentLayoutState>(ConsentLayoutState.Loading)
+    private var formChangedCallback: ((ConsentFormState) -> Unit)? = null
 
     val layout = ConsentScreenLayout(
         state = screenState.asStateFlow(),
@@ -111,32 +113,48 @@ internal class ConsentViewModel(
 
     private fun onAction(action: ConsentAction) {
         when (action) {
-            is ConsentAction.ToggleChanged -> responses.update { it.copy(toggles = it.toggles + (action.id to action.value)) }
+            is ConsentAction.ToggleChanged -> updateResponses { it.copy(toggles = it.toggles + (action.id to action.value)) }
 
-            is ConsentAction.SelectionChanged -> responses.update { it.copy(selects = it.selects + (action.id to action.value)) }
+            is ConsentAction.SelectionChanged -> updateResponses { it.copy(selects = it.selects + (action.id to action.value)) }
 
-            is ConsentAction.FirstNameChanged -> responses.update { response ->
+            is ConsentAction.FirstNameChanged -> updateResponses { response ->
                 val current = response.signatures[action.id] ?: initialMetadata
                 response.copy(signatures = response.signatures + (action.id to current.copy(givenName = action.value)))
             }
 
-            is ConsentAction.LastNameChanged -> responses.update { response ->
+            is ConsentAction.LastNameChanged -> updateResponses { response ->
                 val current = response.signatures[action.id] ?: initialMetadata
                 response.copy(signatures = response.signatures + (action.id to current.copy(familyName = action.value)))
             }
 
-            is ConsentAction.SignatureStrokesChanged -> responses.update { response ->
+            is ConsentAction.SignatureStrokesChanged -> updateResponses { response ->
                 val current = response.signatures[action.id] ?: initialMetadata
                 response.copy(signatures = response.signatures + (action.id to current.copy(strokes = action.strokes)))
             }
 
             is ConsentAction.OnConsentGivenCallbackUpdated -> consentCallback = action.callback
+            is ConsentAction.OnFormChangedCallbackUpdated -> formChangedCallback = action.callback
         }
     }
 
-    private fun isCompleteFlow(): Flow<Boolean> = responses.map {
-        val sections = (screenState.value as? ConsentLayoutState.Content)?.layout?.sections ?: return@map false
-        sections.all { section ->
+    /**
+     * Applies [transform] to the responses and reports the resulting form state.
+     */
+    private fun updateResponses(transform: (ConsentResponses) -> ConsentResponses) {
+        responses.update(transform)
+        formChangedCallback?.invoke(
+            ConsentFormState(
+                responses = currentResponses,
+                isComplete = isComplete(),
+            ),
+        )
+    }
+
+    private fun isCompleteFlow(): Flow<Boolean> = responses.map { isComplete() }.distinctUntilChanged()
+
+    private fun isComplete(): Boolean {
+        val sections = (screenState.value as? ConsentLayoutState.Content)?.layout?.sections ?: return false
+        return sections.all { section ->
             when (section) {
                 is ConsentToggleSection -> isToggleComplete(section = section)
                 is ConsentSelectSection -> isSelectionComplete(section = section)
@@ -144,7 +162,7 @@ internal class ConsentViewModel(
                 else -> true
             }
         }
-    }.distinctUntilChanged()
+    }
 
     private fun isToggleComplete(section: ConsentToggleSection): Boolean {
         val value = currentResponses.toggles[section.id] ?: section.initialValue
@@ -236,6 +254,7 @@ internal data class ConsentContentLayout(
  */
 internal sealed interface ConsentAction {
     data class OnConsentGivenCallbackUpdated(val callback: suspend (ConsentResponses) -> Unit) : ConsentAction
+    data class OnFormChangedCallbackUpdated(val callback: ((ConsentFormState) -> Unit)?) : ConsentAction
     data class ToggleChanged(val id: String, val value: Boolean) : ConsentAction
     data class SelectionChanged(val id: String, val value: String) : ConsentAction
     data class FirstNameChanged(val id: String, val value: String) : ConsentAction

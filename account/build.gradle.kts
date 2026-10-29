@@ -13,6 +13,7 @@ plugins {
 
 android {
     namespace = "org.grovealliance.account"
+    testFixtures { enable = true }
 }
 
 dependencies {
@@ -29,4 +30,7 @@ dependencies {
     implementation(project(":storage-local"))
 
     testImplementation(project(":testing-core"))
+    testFixturesImplementation(platform(libs.compose.bom))
+    testFixturesImplementation(libs.compose.runtime)
+    testFixturesImplementation(libs.bundles.ktx.coroutines)
 }

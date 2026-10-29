@@ -75,7 +75,8 @@ fun MarkdownTextBlock(
  * Renders a single [MarkdownNode].
  *
  * Headings map to the corresponding [TextStyles] scale; paragraphs use [TextStyles.bodyMedium];
- * list items delegate to [MarkdownListItemView] with an auto-generated marker from [counters].
+ * list items delegate to [MarkdownListItemView] with an auto-generated marker from [counters];
+ * tables delegate to [MarkdownTableView].
  */
 @Composable
 fun MarkdownNodeView(
@@ -95,6 +96,12 @@ fun MarkdownNodeView(
         is MarkdownNode.ListItem -> MarkdownListItemView(
             item = node,
             marker = counters.next(node.style),
+            linkClickStrategy = linkClickStrategy,
+            modifier = modifier,
+        )
+
+        is MarkdownNode.Table -> MarkdownTableView(
+            table = node,
             linkClickStrategy = linkClickStrategy,
             modifier = modifier,
         )

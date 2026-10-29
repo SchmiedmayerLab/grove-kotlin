@@ -23,6 +23,7 @@ import org.grovealliance.account.AccountStorageProvider
 import org.grovealliance.account.AnyAccountKey
 import org.grovealliance.account.ExternalAccountStorage
 import org.grovealliance.account.firebase.internal.FirestoreAccountDetailsCodec
+import org.grovealliance.account.isIncomplete
 import org.grovealliance.account.keys
 import org.grovealliance.core.coroutines.Concurrency
 import org.grovealliance.core.dependency
@@ -93,6 +94,12 @@ class FirestoreAccountStorage(
     private val firestoreCodec by dependency<FirestoreAccountDetailsCodec>()
     private val listenerRegistrations = ConcurrentHashMap<String, ListenerRegistration>()
     private val registeredKeys = ConcurrentHashMap<String, ConcurrentHashMap<String, AnyAccountKey>>()
+
+    /**
+     * Accounts whose stored document has been received since their listener was registered. Until
+     * then the cache may hold only values written in this session, not the stored document.
+     */
+    private val receivedAccounts = ConcurrentHashMap.newKeySet<String>()
     private val concurrency by dependency<Concurrency>()
     private val ioScope by lazy { concurrency.ioCoroutineScope() }
 
@@ -103,7 +110,9 @@ class FirestoreAccountStorage(
      * a Firestore snapshot listener is registered for the account so future remote changes
      * are observed and propagated back into the local account system.
      *
-     * If no cached details are available, an empty [AccountDetails] instance is returned.
+     * Until the stored document has been received for this account, the returned details are marked
+     * [AccountDetails.isIncomplete]: the cache may be empty, or hold only values written since. The
+     * snapshot listener supplies the stored values once they arrive.
      *
      * @param accountId The identifier of the account whose details should be loaded.
      * @param keys The set of requested account keys to load and observe.
@@ -120,7 +129,9 @@ class FirestoreAccountStorage(
             } else {
                 mergeRegisteredKeys(accountId = accountId, keys = keys)
             }
-            cached ?: AccountDetails()
+            (cached ?: AccountDetails()).apply {
+                if (accountId !in receivedAccounts) isIncomplete = true
+            }
         }
     }
 
@@ -170,6 +181,7 @@ class FirestoreAccountStorage(
         return runCatching {
             listenerRegistrations.remove(accountId)?.remove()
             registeredKeys.remove(accountId)
+            receivedAccounts.remove(accountId)
             localCache.clear(accountId)
         }
     }
@@ -202,6 +214,7 @@ class FirestoreAccountStorage(
      */
     private fun registerSnapshotListener(accountId: String, keys: Set<AnyAccountKey>) {
         listenerRegistrations.remove(accountId)?.remove()
+        receivedAccounts.remove(accountId)
         registeredKeys[accountId] = keys.associateByTo(ConcurrentHashMap()) { it.identifier }
 
         val registration = userDocument(accountId)
@@ -219,6 +232,7 @@ class FirestoreAccountStorage(
 
                 ioScope.launch {
                     localCache.communicateRemoteChanges(accountId = accountId, details = details)
+                    receivedAccounts.add(accountId)
                     externalStorage.notifyUpdatedDetails(accountId = accountId, details = details)
                 }
             }

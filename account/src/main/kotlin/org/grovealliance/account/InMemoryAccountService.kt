@@ -95,6 +95,7 @@ class InMemoryAccountService(
         val externalModifications = modifications.copy().removeModifications(supportedAccountKeys)
         if (!externalModifications.isEmpty && accountId != null) {
             externalAccountStorage.updateExternalStorage(accountId = accountId, modifications = externalModifications)
+                .onFailure { return Result.failure(it) }
         }
 
         current.addContents(modifications.modifiedDetails)

@@ -72,6 +72,20 @@ class AccountLoginLayoutScreenshotTest : ScreenshotTest() {
     }
 
     @Test
+    fun `AccountLoginLayout with footer screenshot`() {
+        screenshot {
+            baseLayout.copy(
+                alternativeSignIn = null,
+                footer = SignUpLink(
+                    infoText = StringResource("By continuing you agree to the"),
+                    signUpText = StringResource("Terms"),
+                    onClick = {},
+                ),
+            ).Content(modifier = Modifier.fillMaxSize())
+        }
+    }
+
+    @Test
     fun `AccountLoginLayout empty no alternative sign in screenshot`() {
         screenshot {
             val newLayout = baseLayout.copy(
