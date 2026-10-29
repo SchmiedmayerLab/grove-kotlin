@@ -166,7 +166,7 @@ internal class AccountLoginViewModel(
         }
     }
 
-    private fun onLoginClicked() {
+    private suspend fun onLoginClicked() {
         val userIdError = validateUserId()
         val passwordError = validatePassword()
         if (userIdError != null || passwordError != null) {
@@ -178,11 +178,9 @@ internal class AccountLoginViewModel(
             }
             return
         }
-        viewModelScope.launch {
-            accountService.login(credential = UserIdPasswordCredential(userId = userId, password = password))
-                .onSuccess { eventSink.push(AccountLoginEvent.Success) }
-                .onFailure { showErrorToast(message = StringResource(Strings.account_login_failed)) }
-        }
+        accountService.login(credential = UserIdPasswordCredential(userId = userId, password = password))
+            .onSuccess { eventSink.push(AccountLoginEvent.Success) }
+            .onFailure { showErrorToast(message = StringResource(Strings.account_login_failed)) }
     }
 
     private fun showErrorToast(message: StringResource) {
