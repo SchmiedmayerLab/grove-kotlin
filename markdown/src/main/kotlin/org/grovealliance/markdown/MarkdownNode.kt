@@ -35,6 +35,47 @@ sealed interface MarkdownNode {
     data class Paragraph(val text: String) : MarkdownNode
 
     /**
+     * A GitHub-flavored table: a header row, a delimiter row setting each column's alignment, and
+     * any number of body rows.
+     *
+     * Every row in [rows] holds exactly one cell per column: missing cells are empty and cells
+     * beyond the header's are dropped. Cell texts keep their inline markdown.
+     */
+    data class Table(
+        val columns: List<Column>,
+        val rows: List<List<String>>,
+    ) : MarkdownNode {
+
+        /**
+         * One column, with its [header] cell and the [alignment] of all its cells.
+         */
+        data class Column(
+            val header: String,
+            val alignment: Alignment,
+        )
+
+        /**
+         * How the cells of a column are aligned horizontally.
+         */
+        enum class Alignment {
+            /**
+             * Set by `:---` or by a delimiter without colons.
+             */
+            Leading,
+
+            /**
+             * Set by `:---:`.
+             */
+            Center,
+
+            /**
+             * Set by `---:`.
+             */
+            Trailing,
+        }
+    }
+
+    /**
      * The marker convention used to introduce a [ListItem].
      */
     enum class ListStyle {
@@ -100,6 +141,9 @@ fun MarkdownNode.links(): List<DetectedLink> = detectLinks(
         is MarkdownNode.Heading -> text
         is MarkdownNode.ListItem -> text
         is MarkdownNode.Paragraph -> text
+        is MarkdownNode.Table -> (listOf(columns.map { it.header }) + rows).joinToString(separator = "\n") {
+            it.joinToString(separator = " ")
+        }
     }
 )
 
@@ -119,14 +163,13 @@ private val LETTERED_LIST_REGEX = Regex("""^[a-z][.)]\s+(.+)""")
 /**
  * Returns the node for [trimmed] at position [index] in [lines], together with how many lines to advance.
  */
-private fun parseNodeAt(lines: List<String>, index: Int, trimmed: String): Pair<MarkdownNode, Int> {
-    // List items are resolved before the setext look-ahead so that lines starting with `- ` are
-    // never misread as paragraph text preceding a setext underline.
-    val singleLine = tryParseListItem(lines[index]) ?: tryParseAtxHeading(trimmed)
-    if (singleLine != null) return Pair(singleLine, 1)
-    tryParseSetextHeading(lines, index, trimmed)?.let { return Pair(it, 2) }
-    return Pair(MarkdownNode.Paragraph(trimmed), 1)
-}
+private fun parseNodeAt(lines: List<String>, index: Int, trimmed: String): Pair<MarkdownNode, Int> =
+    tryParseTable(lines, index)
+        // List items are resolved before the setext look-ahead so that lines starting with `- ` are
+        // never misread as paragraph text preceding a setext underline.
+        ?: (tryParseListItem(lines[index]) ?: tryParseAtxHeading(trimmed))?.let { Pair(it, 1) }
+        ?: tryParseSetextHeading(lines, index, trimmed)?.let { Pair(it, 2) }
+        ?: Pair(MarkdownNode.Paragraph(trimmed), 1)
 
 private fun tryParseAtxHeading(trimmed: String): MarkdownNode.Heading? {
     val match = ATX_HEADING_REGEX.matchEntire(trimmed) ?: return null
@@ -169,5 +212,77 @@ private fun tryParseListItem(line: String): MarkdownNode.ListItem? {
         }
     }
 }
+
+/**
+ * The table starting at [index] with its line count, when that line is a header row followed by a
+ * delimiter row with as many cells. The body ends at the first blank line, heading or list item.
+ */
+private fun tryParseTable(lines: List<String>, index: Int): Pair<MarkdownNode.Table, Int>? {
+    val headerLine = lines[index]
+    if (index + 1 >= lines.size || '|' !in headerLine) return null
+    val headers = tableCells(headerLine)
+    val alignments = tableCells(lines[index + 1]).map(::tableAlignment)
+    if (alignments.size != headers.size || alignments.any { it == null }) return null
+    val columns = headers.zip(alignments) { header, alignment ->
+        MarkdownNode.Table.Column(
+            header = header,
+            alignment = alignment ?: MarkdownNode.Table.Alignment.Leading,
+        )
+    }
+    val rows = lines.drop(index + 2)
+        .takeWhile { line -> line.isNotBlank() && tryParseListItem(line) == null && tryParseAtxHeading(line.trim()) == null }
+        .map { line -> tableCells(line).take(columns.size).let { it + List(columns.size - it.size) { "" } } }
+    return Pair(
+        MarkdownNode.Table(
+            columns = columns,
+            rows = rows,
+        ),
+        2 + rows.size,
+    )
+}
+
+/**
+ * The cells of a table row: split at unescaped pipes, without the optional outer pipes, each
+ * trimmed and with escaped pipes restored.
+ */
+private fun tableCells(line: String): List<String> {
+    var row = line.trim()
+    if (row.startsWith('|')) row = row.drop(1)
+    if (row.endsWith('|') && !row.endsWith("\\|")) row = row.dropLast(1)
+    val cells = mutableListOf<String>()
+    val cell = StringBuilder()
+    var index = 0
+    while (index < row.length) {
+        val char = row[index]
+        when {
+            char == '\\' && row.getOrNull(index + 1) == '|' -> {
+                cell.append('|')
+                index++
+            }
+            char == '|' -> {
+                cells.add(cell.toString().trim())
+                cell.clear()
+            }
+            else -> cell.append(char)
+        }
+        index++
+    }
+    cells.add(cell.toString().trim())
+    return cells
+}
+
+/**
+ * The alignment a delimiter cell such as `:---:` sets, or `null` when [cell] is no delimiter.
+ */
+private fun tableAlignment(cell: String): MarkdownNode.Table.Alignment? {
+    if (!TABLE_DELIMITER_REGEX.matches(cell)) return null
+    return when {
+        cell.startsWith(':') && cell.endsWith(':') -> MarkdownNode.Table.Alignment.Center
+        cell.endsWith(':') -> MarkdownNode.Table.Alignment.Trailing
+        else -> MarkdownNode.Table.Alignment.Leading
+    }
+}
+
+private val TABLE_DELIMITER_REGEX = Regex(":?-+:?")
 
 private const val LIST_INDENT_SPACES = 4

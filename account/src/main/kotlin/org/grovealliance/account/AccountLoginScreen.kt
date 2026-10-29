@@ -17,6 +17,7 @@ import org.grovealliance.account.internal.screen.AccountLoginAction
 import org.grovealliance.account.internal.screen.AccountLoginEvent
 import org.grovealliance.account.internal.screen.AccountLoginViewModel
 import org.grovealliance.core.viewmodel.groveViewModel
+import org.grovealliance.ui.ComposableContent
 import org.grovealliance.ui.ConsumeEvents
 import org.grovealliance.ui.DismissStyle
 import org.grovealliance.ui.GroveScaffold
@@ -35,12 +36,14 @@ import org.grovealliance.ui.GroveScaffold
  * ```
  *
  * @param dismissStyle The style to use when dismissing the screen. Defaults to [DismissStyle.CLOSE].
+ * @param footer Content shown below the login form, such as a link to a privacy policy.
  * @param onSuccess Called when the user successfully signs in or signs up.
  * @param onDismiss Called when the user dismisses the screen without signing in.
  */
 @Composable
 fun AccountLoginScreen(
     dismissStyle: DismissStyle = DismissStyle.CLOSE,
+    footer: ComposableContent? = null,
     onSuccess: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -56,6 +59,10 @@ fun AccountLoginScreen(
 
     LaunchedEffect(dismissStyle) {
         screen.actionSink.push(action = AccountLoginAction.SetDismissStyle(dismissStyle))
+    }
+
+    LaunchedEffect(footer) {
+        screen.actionSink.push(action = AccountLoginAction.SetFooter(footer))
     }
 
     GroveScaffold(state = screen.scaffoldState) {

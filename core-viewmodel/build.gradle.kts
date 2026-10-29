@@ -27,4 +27,5 @@ dependencies {
     api(libs.androidx.activity.compose)
     api(libs.compose.runtime)
     testImplementation(project(":testing-core"))
+    androidTestImplementation(libs.bundles.integration.testing)
 }

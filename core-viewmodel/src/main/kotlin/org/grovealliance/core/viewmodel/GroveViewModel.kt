@@ -7,9 +7,11 @@
 
 package org.grovealliance.core.viewmodel
 
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelLazy
@@ -17,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.grovealliance.core.requireDependency
@@ -43,6 +46,8 @@ import org.grovealliance.core.viewmodel.internal.ViewModelFactories
  * @param extras Additional creation extras forwarded to the [ViewModelProvider.Factory]. Defaults
  *   to [HasDefaultViewModelProviderFactory.defaultViewModelCreationExtras] when available, or
  *   [CreationExtras.Empty] otherwise.
+ * @param args Initial saved-state arguments merged over the default arguments. Restored state
+ *   takes precedence. Changing arguments does not recreate an existing ViewModel.
  * @return The [VM] instance scoped to [viewModelStoreOwner].
  */
 @Composable
@@ -56,12 +61,13 @@ inline fun <reified VM : ViewModel> groveViewModel(
     } else {
         CreationExtras.Empty
     },
+    args: Bundle? = null,
 ): VM {
     val viewModelFactories = requireDependency<ViewModelFactories>()
     return viewModel(
         viewModelStoreOwner = viewModelStoreOwner,
         key = key,
-        extras = extras,
+        extras = args?.let { extras.withArguments(args = it) } ?: extras,
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
@@ -69,6 +75,36 @@ inline fun <reified VM : ViewModel> groveViewModel(
         },
     )
 }
+
+/**
+ * Copies these extras and their default arguments, then overlays [args] without mutating either.
+ * Existing saved state continues to take precedence over these initial arguments.
+ */
+fun CreationExtras.withArguments(args: Bundle): CreationExtras = MutableCreationExtras(this).apply {
+    set(DEFAULT_ARGS_KEY, Bundle(this@withArguments[DEFAULT_ARGS_KEY] ?: Bundle()).apply { putAll(args) })
+}
+
+/**
+ * Retrieves a scoped ViewModel with initial saved-state arguments built by [args].
+ */
+@Composable
+inline fun <reified VM : ViewModel> groveViewModel(
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
+    },
+    key: String? = null,
+    extras: CreationExtras = if (viewModelStoreOwner is HasDefaultViewModelProviderFactory) {
+        viewModelStoreOwner.defaultViewModelCreationExtras
+    } else {
+        CreationExtras.Empty
+    },
+    args: Bundle.() -> Unit,
+): VM = groveViewModel(
+    viewModelStoreOwner = viewModelStoreOwner,
+    key = key,
+    extras = extras,
+    args = Bundle().apply(args),
+)
 
 /**
  * Returns a [Lazy] delegate to access a [ViewModel] of type [VM] registered in the Grove

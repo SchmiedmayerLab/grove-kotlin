@@ -7,6 +7,7 @@
 
 package org.grovealliance.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -336,6 +337,262 @@ object Colors {
         @Composable
         @ReadOnlyComposable
         get() = Color.Transparent
+}
+
+/**
+ * A color of the theme, named rather than resolved, so it can be stored, compared and passed
+ * around outside composition and resolved with [resolve] where it is drawn.
+ *
+ * Each token stands for the [Colors] property of the same name and follows the theme, including
+ * light and dark mode, wherever it is resolved. [Custom] stands for a color outside the theme, with
+ * an optional variant for dark mode.
+ */
+sealed interface ColorToken {
+
+    /**
+     * Resolves to [Colors.primary].
+     */
+    data object Primary : ColorToken
+
+    /**
+     * Resolves to [Colors.onPrimary].
+     */
+    data object OnPrimary : ColorToken
+
+    /**
+     * Resolves to [Colors.primaryContainer].
+     */
+    data object PrimaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.onPrimaryContainer].
+     */
+    data object OnPrimaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.inversePrimary].
+     */
+    data object InversePrimary : ColorToken
+
+    /**
+     * Resolves to [Colors.secondary].
+     */
+    data object Secondary : ColorToken
+
+    /**
+     * Resolves to [Colors.onSecondary].
+     */
+    data object OnSecondary : ColorToken
+
+    /**
+     * Resolves to [Colors.secondaryContainer].
+     */
+    data object SecondaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.onSecondaryContainer].
+     */
+    data object OnSecondaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.tertiary].
+     */
+    data object Tertiary : ColorToken
+
+    /**
+     * Resolves to [Colors.onTertiary].
+     */
+    data object OnTertiary : ColorToken
+
+    /**
+     * Resolves to [Colors.tertiaryContainer].
+     */
+    data object TertiaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.onTertiaryContainer].
+     */
+    data object OnTertiaryContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.background].
+     */
+    data object Background : ColorToken
+
+    /**
+     * Resolves to [Colors.onBackground].
+     */
+    data object OnBackground : ColorToken
+
+    /**
+     * Resolves to [Colors.surface].
+     */
+    data object Surface : ColorToken
+
+    /**
+     * Resolves to [Colors.onSurface].
+     */
+    data object OnSurface : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceVariant].
+     */
+    data object SurfaceVariant : ColorToken
+
+    /**
+     * Resolves to [Colors.onSurfaceVariant].
+     */
+    data object OnSurfaceVariant : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceTint].
+     */
+    data object SurfaceTint : ColorToken
+
+    /**
+     * Resolves to [Colors.inverseSurface].
+     */
+    data object InverseSurface : ColorToken
+
+    /**
+     * Resolves to [Colors.inverseOnSurface].
+     */
+    data object InverseOnSurface : ColorToken
+
+    /**
+     * Resolves to [Colors.error].
+     */
+    data object Error : ColorToken
+
+    /**
+     * Resolves to [Colors.onError].
+     */
+    data object OnError : ColorToken
+
+    /**
+     * Resolves to [Colors.errorContainer].
+     */
+    data object ErrorContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.onErrorContainer].
+     */
+    data object OnErrorContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.outline].
+     */
+    data object Outline : ColorToken
+
+    /**
+     * Resolves to [Colors.outlineVariant].
+     */
+    data object OutlineVariant : ColorToken
+
+    /**
+     * Resolves to [Colors.scrim].
+     */
+    data object Scrim : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceBright].
+     */
+    data object SurfaceBright : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceDim].
+     */
+    data object SurfaceDim : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceContainer].
+     */
+    data object SurfaceContainer : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceContainerHigh].
+     */
+    data object SurfaceContainerHigh : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceContainerHighest].
+     */
+    data object SurfaceContainerHighest : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceContainerLow].
+     */
+    data object SurfaceContainerLow : ColorToken
+
+    /**
+     * Resolves to [Colors.surfaceContainerLowest].
+     */
+    data object SurfaceContainerLowest : ColorToken
+
+    /**
+     * Resolves to [Colors.transparent].
+     */
+    data object Transparent : ColorToken
+
+    /**
+     * A color outside the theme, resolved to [light] in light mode and to [dark] in dark mode.
+     *
+     * @param light the color in light mode
+     * @param dark the color in dark mode; the same as [light] when omitted
+     */
+    data class Custom(
+        val light: Color,
+        val dark: Color = light,
+    ) : ColorToken
+}
+
+/**
+ * The color this token stands for in the current theme.
+ */
+// A flat, exhaustive lookup: the compiler flags any token left unmapped, so the branch count is not
+// complexity worth splitting up.
+@Suppress("CyclomaticComplexMethod")
+@Composable
+@ReadOnlyComposable
+fun ColorToken.resolve(): Color = when (this) {
+    ColorToken.Primary -> Colors.primary
+    ColorToken.OnPrimary -> Colors.onPrimary
+    ColorToken.PrimaryContainer -> Colors.primaryContainer
+    ColorToken.OnPrimaryContainer -> Colors.onPrimaryContainer
+    ColorToken.InversePrimary -> Colors.inversePrimary
+    ColorToken.Secondary -> Colors.secondary
+    ColorToken.OnSecondary -> Colors.onSecondary
+    ColorToken.SecondaryContainer -> Colors.secondaryContainer
+    ColorToken.OnSecondaryContainer -> Colors.onSecondaryContainer
+    ColorToken.Tertiary -> Colors.tertiary
+    ColorToken.OnTertiary -> Colors.onTertiary
+    ColorToken.TertiaryContainer -> Colors.tertiaryContainer
+    ColorToken.OnTertiaryContainer -> Colors.onTertiaryContainer
+    ColorToken.Background -> Colors.background
+    ColorToken.OnBackground -> Colors.onBackground
+    ColorToken.Surface -> Colors.surface
+    ColorToken.OnSurface -> Colors.onSurface
+    ColorToken.SurfaceVariant -> Colors.surfaceVariant
+    ColorToken.OnSurfaceVariant -> Colors.onSurfaceVariant
+    ColorToken.SurfaceTint -> Colors.surfaceTint
+    ColorToken.InverseSurface -> Colors.inverseSurface
+    ColorToken.InverseOnSurface -> Colors.inverseOnSurface
+    ColorToken.Error -> Colors.error
+    ColorToken.OnError -> Colors.onError
+    ColorToken.ErrorContainer -> Colors.errorContainer
+    ColorToken.OnErrorContainer -> Colors.onErrorContainer
+    ColorToken.Outline -> Colors.outline
+    ColorToken.OutlineVariant -> Colors.outlineVariant
+    ColorToken.Scrim -> Colors.scrim
+    ColorToken.SurfaceBright -> Colors.surfaceBright
+    ColorToken.SurfaceDim -> Colors.surfaceDim
+    ColorToken.SurfaceContainer -> Colors.surfaceContainer
+    ColorToken.SurfaceContainerHigh -> Colors.surfaceContainerHigh
+    ColorToken.SurfaceContainerHighest -> Colors.surfaceContainerHighest
+    ColorToken.SurfaceContainerLow -> Colors.surfaceContainerLow
+    ColorToken.SurfaceContainerLowest -> Colors.surfaceContainerLowest
+    ColorToken.Transparent -> Colors.transparent
+    is ColorToken.Custom -> if (isSystemInDarkTheme()) dark else light
 }
 
 /**

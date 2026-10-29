@@ -16,10 +16,12 @@ import org.grovealliance.health.AggregationBucket
 import org.grovealliance.health.AggregationInterval
 import org.grovealliance.health.AnyRecordType
 import org.grovealliance.health.Health
+import org.grovealliance.health.HealthChanges
 import org.grovealliance.health.HealthConfigurationScope
 import org.grovealliance.health.HealthConnectAvailability
 import org.grovealliance.health.HealthDataAccessRequirements
 import org.grovealliance.health.HealthQueryTimeRange
+import org.grovealliance.health.HealthReadAccess
 import org.grovealliance.health.QueryResult
 import org.grovealliance.health.QuerySort
 import org.grovealliance.health.RecordType
@@ -176,6 +178,11 @@ internal class HealthImpl(
     override fun configure() {
         clientProvider.configure()
     }
+
+    override suspend fun readAccess(type: AnyRecordType): HealthReadAccess = healthClient.readAccess(type = type)
+
+    override suspend fun <T : Record> changes(type: RecordType<T>, token: String?): Result<HealthChanges<T>> =
+        healthClient.changes(type = type, token = token)
 
     override suspend fun isAuthorizedToRead(type: AnyRecordType): Boolean = healthClient.isAuthorizedToRead(type)
 

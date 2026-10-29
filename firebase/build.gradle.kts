@@ -11,6 +11,7 @@ plugins {
 
 android {
     namespace = "org.grovealliance.firebase"
+    testFixtures { enable = true }
 
     // `FirebaseOptions.Builder` validates its arguments through `android.text.TextUtils`, which the
     // unit-test android.jar only stubs out. Without this, building options throws "not mocked".
@@ -23,6 +24,8 @@ dependencies {
 
     implementation(project(":core-coroutines"))
     implementation(project(":core-logging"))
+
+    testFixturesImplementation(libs.bundles.ktx.coroutines)
 
     testImplementation(project(":testing-core"))
 }

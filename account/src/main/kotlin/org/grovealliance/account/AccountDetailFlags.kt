@@ -100,7 +100,7 @@ var AccountDetails.isIncomplete: Boolean
     get() = flags.contains(AccountDetailFlags.isIncomplete)
     set(value) = updateFlags(AccountDetailFlags.isIncomplete, value)
 
-private object AccountDetailsFlagsKey : DefaultProvidingKnowledgeSource<AccountAnchor, AccountDetailFlags> {
+internal object AccountDetailsFlagsKey : DefaultProvidingKnowledgeSource<AccountAnchor, AccountDetailFlags> {
     override val defaultValue: AccountDetailFlags = AccountDetailFlags(0)
 }
 

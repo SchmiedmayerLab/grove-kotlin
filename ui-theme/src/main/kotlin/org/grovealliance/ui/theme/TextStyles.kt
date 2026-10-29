@@ -104,6 +104,125 @@ object TextStyles {
 }
 
 /**
+ * A text style of the theme, named rather than resolved, so it can be stored, compared and passed
+ * around outside composition and resolved with [resolve] where it is drawn.
+ *
+ * Each token stands for the [TextStyles] property of the same name. [Custom] passes a fixed style
+ * through unchanged.
+ */
+sealed interface TextStyleToken {
+
+    /**
+     * Resolves to [TextStyles.bodyMedium].
+     */
+    data object BodyMedium : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.bodyLarge].
+     */
+    data object BodyLarge : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.bodySmall].
+     */
+    data object BodySmall : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.titleLarge].
+     */
+    data object TitleLarge : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.titleMedium].
+     */
+    data object TitleMedium : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.titleSmall].
+     */
+    data object TitleSmall : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.labelSmall].
+     */
+    data object LabelSmall : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.labelMedium].
+     */
+    data object LabelMedium : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.labelLarge].
+     */
+    data object LabelLarge : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.headlineSmall].
+     */
+    data object HeadlineSmall : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.headlineMedium].
+     */
+    data object HeadlineMedium : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.headlineLarge].
+     */
+    data object HeadlineLarge : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.displaySmall].
+     */
+    data object DisplaySmall : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.displayMedium].
+     */
+    data object DisplayMedium : TextStyleToken
+
+    /**
+     * Resolves to [TextStyles.displayLarge].
+     */
+    data object DisplayLarge : TextStyleToken
+
+    /**
+     * A fixed text style, resolved to itself whatever the theme.
+     *
+     * @param style the style itself
+     */
+    data class Custom(val style: TextStyle) : TextStyleToken
+}
+
+/**
+ * The text style this token stands for in the current theme.
+ */
+// A flat, exhaustive lookup: the compiler flags any token left unmapped, so the branch count is not
+// complexity worth splitting up.
+@Suppress("CyclomaticComplexMethod")
+@Composable
+@ReadOnlyComposable
+fun TextStyleToken.resolve(): TextStyle = when (this) {
+    TextStyleToken.BodyMedium -> TextStyles.bodyMedium
+    TextStyleToken.BodyLarge -> TextStyles.bodyLarge
+    TextStyleToken.BodySmall -> TextStyles.bodySmall
+    TextStyleToken.TitleLarge -> TextStyles.titleLarge
+    TextStyleToken.TitleMedium -> TextStyles.titleMedium
+    TextStyleToken.TitleSmall -> TextStyles.titleSmall
+    TextStyleToken.LabelSmall -> TextStyles.labelSmall
+    TextStyleToken.LabelMedium -> TextStyles.labelMedium
+    TextStyleToken.LabelLarge -> TextStyles.labelLarge
+    TextStyleToken.HeadlineSmall -> TextStyles.headlineSmall
+    TextStyleToken.HeadlineMedium -> TextStyles.headlineMedium
+    TextStyleToken.HeadlineLarge -> TextStyles.headlineLarge
+    TextStyleToken.DisplaySmall -> TextStyles.displaySmall
+    TextStyleToken.DisplayMedium -> TextStyles.displayMedium
+    TextStyleToken.DisplayLarge -> TextStyles.displayLarge
+    is TextStyleToken.Custom -> style
+}
+
+/**
  * Returns a [TextStyle] with the same properties as the original, but with a [FontWeight.Light] font weight.
  */
 fun TextStyle.light(): TextStyle = copy(fontWeight = FontWeight.Light)

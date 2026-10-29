@@ -45,6 +45,7 @@ import org.grovealliance.ui.theme.bold
  * @param signUpLink link to the sign up screen
  * @param loginButton button to login
  * @param alternativeSignIn alternative sign in options
+ * @param footer content shown below the form, outside its scrolling area
  */
 data class AccountLoginLayout(
     val title: StringResource,
@@ -55,9 +56,21 @@ data class AccountLoginLayout(
     val signUpLink: SignUpLink,
     val loginButton: AsyncTextButton,
     val alternativeSignIn: AlternativeSignIn?,
+    val footer: ComposableContent? = null,
 ) : ComposableContent {
     @Composable
     override fun Content(modifier: Modifier) {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Form(modifier = Modifier.weight(1f))
+            footer?.Content(modifier = Modifier.padding(Spacings.medium))
+        }
+    }
+
+    @Composable
+    private fun Form(modifier: Modifier) {
         Column(
             modifier = modifier
                 .padding(Spacings.medium)
