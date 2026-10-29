@@ -11,4 +11,6 @@ SPDX-License-Identifier: MIT
 
 <resources>
     <string name="app_name">Grove Samples</string>
+    <string name="ui_dashboard_title">UI Dashboard</string>
+    <string name="ui_dashboard_description">Explore interactive charts, gauges, activity tiles, and achievements with sample data.</string>
 </resources>

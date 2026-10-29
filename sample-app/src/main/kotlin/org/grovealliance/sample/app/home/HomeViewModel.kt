@@ -52,6 +52,13 @@ class HomeViewModel(
             buildList {
                 add(
                     ModuleEntryCard(
+                        title = StringResource(R.string.ui_dashboard_title),
+                        description = StringResource(R.string.ui_dashboard_description),
+                        onClick = { navigator.navigateTo(NavigationEvent.UiDashboard) },
+                    ),
+                )
+                add(
+                    ModuleEntryCard(
                         title = StringResource("Health"),
                         description = StringResource("Explore Health and reads basic health data."),
                         onClick = { navigator.navigateTo(NavigationEvent.Health) }

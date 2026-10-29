@@ -22,6 +22,7 @@ import org.grovealliance.health.CollectionMode
 import org.grovealliance.health.HealthConstraint
 import org.grovealliance.health.RecordType
 import org.grovealliance.health.health
+import org.grovealliance.sample.app.dashboard.UiDashboardViewModel
 import org.grovealliance.sample.app.health.HealthPrivacyScreen
 import org.grovealliance.sample.app.health.HealthViewModel
 import org.grovealliance.sample.app.home.HomeViewModel
@@ -44,6 +45,10 @@ class SampleApplication : Application(), GroveApplication, HealthConstraint {
                 navigator = dependency(),
                 health = dependency(),
             )
+        }
+
+        viewModel {
+            UiDashboardViewModel(navigator = dependency())
         }
 
         health {

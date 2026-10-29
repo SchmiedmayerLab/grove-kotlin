@@ -19,6 +19,7 @@ import androidx.navigation3.ui.NavDisplay
 import org.grovealliance.account.AccountLoginScreen
 import org.grovealliance.account.AccountOverviewScreen
 import org.grovealliance.core.dependency
+import org.grovealliance.sample.app.dashboard.UiDashboard
 import org.grovealliance.sample.app.health.HealthScreen
 import org.grovealliance.sample.app.home.HomeScreen
 import org.grovealliance.ui.ConsumeEvents
@@ -48,6 +49,7 @@ class SampleActivity : AppCompatActivity() {
         ConsumeEvents(eventFlow = navigator.events) { event ->
             when (event) {
                 is NavigationEvent.PopBackStack, is NavigationEvent.NavigateUp -> backStack.removeLastOrNull()
+                is NavigationEvent.UiDashboard -> backStack.add(Routes.UiDashboard)
                 is NavigationEvent.Health -> backStack.add(Routes.Health)
                 is NavigationEvent.AccountLogin -> backStack.add(Routes.AccountLogin)
                 is NavigationEvent.AccountOverview -> backStack.add(Routes.AccountOverview)
@@ -66,6 +68,9 @@ class SampleActivity : AppCompatActivity() {
             entryProvider = entryProvider {
                 entry<Routes.Home> {
                     HomeScreen()
+                }
+                entry<Routes.UiDashboard> {
+                    UiDashboard()
                 }
                 entry<Routes.Health> {
                     HealthScreen()

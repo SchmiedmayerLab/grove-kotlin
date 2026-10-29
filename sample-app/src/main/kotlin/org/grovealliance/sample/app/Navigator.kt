@@ -22,6 +22,7 @@ class Navigator {
 }
 
 sealed interface NavigationEvent {
+    data object UiDashboard : NavigationEvent
     data object Health : NavigationEvent
     data object AccountLogin : NavigationEvent
     data object AccountOverview : NavigationEvent
@@ -33,6 +34,9 @@ sealed interface NavigationEvent {
 sealed interface Routes : NavKey {
     @Serializable
     data object Home : Routes
+
+    @Serializable
+    data object UiDashboard : Routes
 
     @Serializable
     data object Health : Routes

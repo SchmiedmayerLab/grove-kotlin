@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":core-coroutines"))
     implementation(project(":health"))
     implementation(project(":ui"))
+    implementation(project(":ui-dashboard"))
     implementation(project(":account"))
 
     implementation(libs.bundles.navigation3)

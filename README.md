@@ -59,6 +59,7 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | --- | --- |
 | [`ui`](ui/) | The design system: layouts, controls, and app chrome. |
 | [`ui-account`](ui-account/) | Account screens. |
+| [`ui-dashboard`](ui-dashboard/) | Dashboard screens: gauges, charts, and metric tiles. |
 | [`ui-scheduler`](ui-scheduler/) | Schedule and task screens. |
 | [`ui-theme`](ui-theme/) | Typography, colors, and theming. |
 | [`ui-validation`](ui-validation/) | Input validation and its presentation. |
