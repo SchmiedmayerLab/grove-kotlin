@@ -37,17 +37,19 @@ import org.grovealliance.ui.AsyncTextButton
 import org.grovealliance.ui.ComposableContent
 import org.grovealliance.ui.EventSink
 import org.grovealliance.ui.GroveScaffoldState
+import org.grovealliance.ui.GroveSection
 import org.grovealliance.ui.ImageResource
 import org.grovealliance.ui.LoadingLayout
 import org.grovealliance.ui.StringResource
 import org.grovealliance.ui.account.AccountEditButton
 import org.grovealliance.ui.account.AccountOverviewItem
 import org.grovealliance.ui.account.AccountOverviewLayout
-import org.grovealliance.ui.account.AccountOverviewSection
 import org.grovealliance.ui.account.AccountProfileHeader
+import org.grovealliance.ui.account.CustomAccountSections
 import org.grovealliance.ui.account.StringDataDisplay
 import org.grovealliance.ui.coroutinesLauncher
 import org.grovealliance.ui.groveAppBar
+import org.grovealliance.ui.groveSections
 import org.grovealliance.ui.mutableScaffoldState
 import org.grovealliance.ui.showErrorToast
 import org.grovealliance.ui.theme.Colors
@@ -71,7 +73,7 @@ internal class AccountOverviewViewModel(
     private val _isEditMode = MutableStateFlow(false)
     private val _showEditButton = MutableStateFlow(false)
     private val configuredKeys by lazy { account.configuration.all() }
-    private val customSection = MutableStateFlow<ComposableContent?>(null)
+    private val customSections = MutableStateFlow(CustomAccountSections.None)
 
     private val editButton = AccountEditButton(
         visible = combine(_isEditMode, _showEditButton) { isEdit, showEdit -> isEdit || showEdit },
@@ -102,7 +104,7 @@ internal class AccountOverviewViewModel(
             merge(
                 account.details,
                 _isEditMode,
-                customSection,
+                customSections,
             ).collect {
                 val details = account.details.value
                 if (details == null) {
@@ -130,7 +132,7 @@ internal class AccountOverviewViewModel(
 
     private fun onAction(action: AccountOverviewAction) {
         when (action) {
-            is AccountOverviewAction.SetCustomSection -> customSection.update { action.content }
+            is AccountOverviewAction.SetCustomSections -> customSections.update { action.sections }
         }
     }
 
@@ -138,7 +140,7 @@ internal class AccountOverviewViewModel(
         title = StringResource(Strings.account_overview_section_title),
         header = buildHeader(details),
         sections = buildSections(details),
-        customSection = customSection.value,
+        customSections = customSections.value,
         logout = AsyncTextButton(
             title = StringResource(Strings.account_overview_logout_button),
             containerColor = { Colors.error },
@@ -164,19 +166,24 @@ internal class AccountOverviewViewModel(
         )
     }
 
-    private fun buildSections(details: AccountDetails): List<AccountOverviewSection> {
-        val sections = mutableListOf<AccountOverviewSection>()
-
+    private fun buildSections(details: AccountDetails): List<GroveSection> = groveSections {
         // Default section one row for name/identity details, one for sign-in & security.
         val defaultSectionItems = buildList {
             buildNameDetails(details)?.let { add(it) }
             buildSecurityItem(details)?.let { add(it) }
         }
         if (defaultSectionItems.isNotEmpty()) {
-            sections.add(AccountOverviewSection(title = StringResource(Strings.account), items = defaultSectionItems))
+            section(key = DEFAULT_SECTION_KEY) {
+                title(Strings.account)
+                card(key = "items") {
+                    defaultSectionItems.forEachIndexed { index, item ->
+                        row(key = "$index", content = item)
+                    }
+                }
+            }
         }
 
-        // remaining sections (excluding .name and .credentials as covered by default section).
+        // Remaining sections (excluding .name and .credentials as covered by default section).
         account.configuration
             .allCategorized(
                 filteredBy = setOf(
@@ -189,17 +196,19 @@ internal class AccountOverviewViewModel(
             .filter { (category, _) ->
                 category != AccountKeyCategory.Name && category != AccountKeyCategory.Credentials
             }
-            .mapNotNull { (category, keys) ->
+            .forEach { (category, keys) ->
                 val items = keys.mapNotNull { key -> buildSectionItem(key, details) }
-                if (items.isEmpty()) return@mapNotNull null
-                AccountOverviewSection(
-                    title = category.title,
-                    items = items,
-                )
+                if (items.isNotEmpty()) {
+                    section(key = category.id) {
+                        category.title?.let { title(it) }
+                        card(key = "items") {
+                            items.forEachIndexed { index, item ->
+                                row(key = "$index", content = item)
+                            }
+                        }
+                    }
+                }
             }
-            .forEach { sections.add(it) }
-
-        return sections
     }
 
     private fun buildNameDetails(details: AccountDetails): AccountOverviewItem<String>? {
@@ -314,6 +323,10 @@ internal class AccountOverviewViewModel(
                 )
             }
     }
+
+    private companion object {
+        const val DEFAULT_SECTION_KEY = "account"
+    }
 }
 
 internal data class AccountOverviewScreen(
@@ -337,5 +350,5 @@ internal sealed interface AccountOverviewEvent {
 }
 
 internal sealed interface AccountOverviewAction {
-    data class SetCustomSection(val content: ComposableContent?) : AccountOverviewAction
+    data class SetCustomSections(val sections: CustomAccountSections) : AccountOverviewAction
 }

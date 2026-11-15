@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Renders a [GroveScaffold] without a background content slot.
  *
- * @param state The scaffold state driving the app bar, toast, bottom sheet, and overlay.
+ * @param state The scaffold state driving the app bar, toast, bottom sheet, dialog, and overlay.
  * @param content The main screen content rendered inside the scaffold's content area.
  */
 @Composable
@@ -65,7 +65,7 @@ fun GroveScaffold(
 /**
  * The primary Grove scaffold composable that renders a full screen layout.
  *
- * Handles the app bar, toast notifications, bottom sheet, and overlay driven by [state],
+ * Handles the app bar, toast notifications, bottom sheet, dialog, and overlay driven by [state],
  * while composing the main [content] and an optional full-bleed [backgroundContent] behind it.
  *
  * Example:
@@ -150,6 +150,7 @@ fun GroveScaffold(
                 localToast.toast?.Content()
             }
         }
+        widgets.dialog?.Dialog(Modifier)
         widgets.overlay?.Content(Modifier.fillMaxSize())
     }
 }
@@ -179,7 +180,7 @@ fun StaticGroveScaffold(
  * Read-only state interface for [GroveScaffold].
  *
  * Exposes a [StateFlow] of [GroveScaffoldWidgets] that the scaffold observes to update its
- * app bar, toast, bottom sheet, and overlay slots reactively.
+ * app bar, toast, bottom sheet, dialog, and overlay slots reactively.
  *
  * Use the companion [invoke] factory for static / preview instances. For fully mutable
  * runtime state, use [MutableGroveScaffoldState].
@@ -198,6 +199,7 @@ interface GroveScaffoldState {
          * @param ignoreAppBarPadding When `true`, content is not offset below the app bar.
          * @param toast Optional initial toast to display.
          * @param bottomSheet Optional initial bottom sheet to display.
+         * @param dialog Optional initial dialog to display.
          * @param overlay Optional initial overlay to display.
          */
         operator fun invoke(
@@ -205,6 +207,7 @@ interface GroveScaffoldState {
             ignoreAppBarPadding: Boolean = false,
             toast: GroveToast? = null,
             bottomSheet: BottomSheetComposableContent? = null,
+            dialog: DialogComposableContent? = null,
             overlay: ComposableContent? = null,
         ): GroveScaffoldState = object : GroveScaffoldState {
             private val _widgets = MutableStateFlow(
@@ -213,6 +216,7 @@ interface GroveScaffoldState {
                     ignoreAppBarPadding = ignoreAppBarPadding,
                     toast = toast,
                     bottomSheet = bottomSheet,
+                    dialog = dialog,
                     overlay = overlay,
                 )
             )
@@ -236,6 +240,7 @@ interface GroveScaffoldState {
  * **Thread safety:** All state mutations and the sheet dismiss guard are thread-safe,
  * so calls from any thread are safe.
  */
+@Suppress("detekt:TooManyFunctions")
 interface MutableGroveScaffoldState : GroveScaffoldState {
 
     /** Sets the app bar to display, or `null` to hide it. */
@@ -249,6 +254,18 @@ interface MutableGroveScaffoldState : GroveScaffoldState {
      * No-ops if no sheet is visible or one is already in the process of being dismissed.
      */
     fun dismissBottomSheet()
+
+    /**
+     * Presents [dialog] as a modal dialog, replacing any currently shown dialog. The dialog is
+     * removed again once it closes, whichever way it is closed.
+     */
+    fun showDialog(dialog: DialogComposableContent)
+
+    /**
+     * Programmatically closes the currently shown dialog, calling its
+     * [onDismiss][DialogComposableContent.onDismiss]. No-ops if no dialog is shown.
+     */
+    fun dismissDialog()
 
     /** Presents [overlay] as a full-size composable drawn above all other scaffold content. */
     fun showOverlay(overlay: ComposableContent)
@@ -381,6 +398,7 @@ fun rememberMutableGroveScaffoldState(
  * @property ignoreAppBarPadding When `true`, [content][GroveScaffold] is not offset below the app bar.
  * @property toast The toast currently being shown, or `null` if none.
  * @property bottomSheet The bottom sheet currently being shown, or `null` if none.
+ * @property dialog The dialog currently being shown, or `null` if none.
  * @property overlay The overlay currently being shown, or `null` if none.
  */
 data class GroveScaffoldWidgets(
@@ -388,6 +406,7 @@ data class GroveScaffoldWidgets(
     val ignoreAppBarPadding: Boolean,
     val toast: GroveToast?,
     val bottomSheet: BottomSheetComposableContent?,
+    val dialog: DialogComposableContent?,
     val overlay: ComposableContent?,
 )
 
@@ -413,6 +432,7 @@ private class MutableGroveScaffoldStateImpl(
             ignoreAppBarPadding = ignoreAppBarPadding,
             toast = null,
             bottomSheet = null,
+            dialog = null,
             overlay = null,
         )
     )
@@ -436,6 +456,14 @@ private class MutableGroveScaffoldStateImpl(
     override fun dismissBottomSheet() {
         if (_widgets.value.bottomSheet == null || !isDismissingSheet.compareAndSet(false, true)) return
         sheetEventSink.push(BottomSheetEvent.Dismiss)
+    }
+
+    override fun showDialog(dialog: DialogComposableContent) {
+        _widgets.update { it.copy(dialog = DialogContentWrapper(dialog)) }
+    }
+
+    override fun dismissDialog() {
+        _widgets.value.dialog?.onDismiss?.invoke()
     }
 
     override fun showOverlay(overlay: ComposableContent) {
@@ -489,6 +517,23 @@ private class MutableGroveScaffoldStateImpl(
         @Composable
         override fun Sheet(modifier: Modifier) {
             super.Sheet(modifier)
+        }
+    }
+
+    private inner class DialogContentWrapper(
+        private val content: DialogComposableContent,
+    ) : DialogComposableContent by content {
+        override val onDismiss: () -> Unit
+            get() = {
+                // Only the dialog still shown is removed, so a late call from a replaced one keeps
+                // its successor.
+                _widgets.update { widgets -> if (widgets.dialog === this) widgets.copy(dialog = null) else widgets }
+                content.onDismiss()
+            }
+
+        @Composable
+        override fun Dialog(modifier: Modifier) {
+            super.Dialog(modifier)
         }
     }
 }

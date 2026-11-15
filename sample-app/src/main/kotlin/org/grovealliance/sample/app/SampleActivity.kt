@@ -19,6 +19,7 @@ import androidx.navigation3.ui.NavDisplay
 import org.grovealliance.account.AccountLoginScreen
 import org.grovealliance.account.AccountOverviewScreen
 import org.grovealliance.core.dependency
+import org.grovealliance.license.LicenseInformationScreen
 import org.grovealliance.sample.app.health.HealthScreen
 import org.grovealliance.sample.app.home.HomeScreen
 import org.grovealliance.ui.ConsumeEvents
@@ -51,6 +52,7 @@ class SampleActivity : AppCompatActivity() {
                 is NavigationEvent.Health -> backStack.add(Routes.Health)
                 is NavigationEvent.AccountLogin -> backStack.add(Routes.AccountLogin)
                 is NavigationEvent.AccountOverview -> backStack.add(Routes.AccountOverview)
+                is NavigationEvent.LicenseInformation -> backStack.add(Routes.LicenseInformation)
             }
         }
 
@@ -82,6 +84,11 @@ class SampleActivity : AppCompatActivity() {
                 }
                 entry<Routes.AccountOverview> {
                     AccountOverviewScreen(
+                        onDismiss = { backStack.removeLastOrNull() },
+                    )
+                }
+                entry<Routes.LicenseInformation> {
+                    LicenseInformationScreen(
                         onDismiss = { backStack.removeLastOrNull() },
                     )
                 }

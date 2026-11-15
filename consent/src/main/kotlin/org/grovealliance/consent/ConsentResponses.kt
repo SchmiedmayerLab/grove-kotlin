@@ -38,11 +38,14 @@ data class ConsentResponses(
  * @property givenName The signer's first name.
  * @property familyName The signer's last name.
  * @property strokes The strokes making up the hand-drawn signature.
+ * @property canvasSize The size of the canvas the [strokes] were drawn on, or `null` before anything
+ * was drawn.
  */
 data class SignatureMetadata(
     val givenName: String,
     val familyName: String,
     val strokes: List<SignatureStroke>,
+    val canvasSize: SignatureCanvasSize?,
 ) {
 
     companion object {
@@ -53,6 +56,7 @@ data class SignatureMetadata(
             givenName = "",
             familyName = "",
             strokes = emptyList(),
+            canvasSize = null,
         )
     }
 }
@@ -66,3 +70,13 @@ data class SignatureStroke(val points: List<SignaturePoint>)
  * A point within a [SignatureStroke], in the signature canvas' coordinate space.
  */
 data class SignaturePoint(val x: Float, val y: Float)
+
+/**
+ * The size of the canvas a signature was drawn on, in the coordinate space of its
+ * [SignaturePoint]s, so the signature can be drawn elsewhere at its original size and position
+ * relative to the canvas.
+ */
+data class SignatureCanvasSize(
+    val width: Float,
+    val height: Float,
+)
