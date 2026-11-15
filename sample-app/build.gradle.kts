@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.grove.compose)
     alias(libs.plugins.grove.serialization)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.aboutlibraries.android)
 }
 
 android {
@@ -47,6 +48,7 @@ dependencies {
     implementation(project(":health"))
     implementation(project(":ui"))
     implementation(project(":account"))
+    implementation(project(":license"))
 
     implementation(libs.bundles.navigation3)
 

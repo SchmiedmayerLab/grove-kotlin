@@ -22,9 +22,12 @@ import org.grovealliance.health.CollectionMode
 import org.grovealliance.health.HealthConstraint
 import org.grovealliance.health.RecordType
 import org.grovealliance.health.health
+import org.grovealliance.license.LicenseProject
+import org.grovealliance.license.license
 import org.grovealliance.sample.app.health.HealthPrivacyScreen
 import org.grovealliance.sample.app.health.HealthViewModel
 import org.grovealliance.sample.app.home.HomeViewModel
+import org.grovealliance.ui.StringResource
 import kotlin.time.Duration.Companion.seconds
 
 class SampleApplication : Application(), GroveApplication, HealthConstraint {
@@ -56,6 +59,17 @@ class SampleApplication : Application(), GroveApplication, HealthConstraint {
             )
             privacy {
                 composable { HealthPrivacyScreen() }
+            }
+        }
+
+        license {
+            project {
+                LicenseProject(
+                    name = StringResource(R.string.app_name),
+                    version = BuildConfig.VERSION_NAME,
+                    licenseIdentifier = "MIT",
+                    url = "https://github.com/SchmiedmayerLab/grove-kotlin",
+                )
             }
         }
 

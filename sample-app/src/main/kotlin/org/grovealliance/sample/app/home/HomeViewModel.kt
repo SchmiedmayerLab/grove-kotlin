@@ -72,6 +72,14 @@ class HomeViewModel(
                         }
                     ),
                 )
+
+                add(
+                    ModuleEntryCard(
+                        title = StringResource("License"),
+                        description = StringResource("Explore the third-party software this app is built with."),
+                        onClick = { navigator.navigateTo(NavigationEvent.LicenseInformation) }
+                    ),
+                )
             }
         }
     }
