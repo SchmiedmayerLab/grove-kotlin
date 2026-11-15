@@ -7,6 +7,7 @@
 
 # Please keep [versions] block sorted. Select all items and in Android Studio `Edit > Sort Lines`
 [versions]
+aboutLibraries = "15.3.0"
 activityCompose = "1.13.0"
 agp = "9.4.1"
 androidTools = "32.3.1"
@@ -60,6 +61,7 @@ zstdJni = "1.5.7-20"
 
 # Please keep [libraries] block sorted. Select all items and in Android Studio `Edit > Sort Lines`
 [libraries]
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 android-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "coreDesugaringVersion" }
 android-fhir-data-capture = { module = "com.google.android.fhir:data-capture", version.ref = "fhirDataCapture" }
 android-gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -129,6 +131,7 @@ zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstdJni" }
 
 # Please keep [plugins] block sorted. Select all items and in Android Studio `Edit > Sort Lines`
 [plugins]
+aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -126,4 +126,14 @@ SPDX-License-Identifier: MIT
     <!-- scheduler notifications -->
     <string name="scheduler_notifications_channel_name">Task Reminders</string>
     <string name="scheduler_notifications_channel_description">Reminders for your upcoming tasks.</string>
+
+    <!-- license -->
+    <string name="license_information_title">License Information</string>
+    <string name="license_information_dependencies_header">Dependencies used by %1$s</string>
+    <string name="license_information_footer">Please refer to the individual repository links for packages without license labels.</string>
+    <string name="license_information_version">Version: %1$s</string>
+    <string name="license_information_open_in_browser">Open in Browser</string>
+    <string name="license_information_error_title">Licenses Unavailable</string>
+    <string name="license_information_error_message">The license information couldn\'t be loaded. Please try again.</string>
+    <string name="license_information_retry">Try Again</string>
 </resources>

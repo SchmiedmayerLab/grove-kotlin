@@ -9,6 +9,7 @@ import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
 
 plugins {
+    alias(libs.plugins.aboutlibraries.android) apply false
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.compose.compiler) version libs.versions.kotlin apply false

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+This source file is part of the Grove open-source project
+
+SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
+
+SPDX-License-Identifier: MIT
+
+Keeps the dependency list that the AboutLibraries Gradle plugin generates into the host app, which
+the license module only looks up by name, when the app's resources are shrunk.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/aboutlibraries" />

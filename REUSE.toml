@@ -35,3 +35,11 @@ path = [
 ]
 SPDX-FileCopyrightText = "2026 Stanford University and the project authors (see CONTRIBUTORS.md)"
 SPDX-License-Identifier = "MIT"
+
+# Module READMEs carry no license header, so they are covered here.
+[[annotations]]
+path = [
+    "license/README.md",
+]
+SPDX-FileCopyrightText = "2026 Stanford University and the project authors (see CONTRIBUTORS.md)"
+SPDX-License-Identifier = "MIT"

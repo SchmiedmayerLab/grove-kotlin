@@ -25,6 +25,7 @@ sealed interface NavigationEvent {
     data object Health : NavigationEvent
     data object AccountLogin : NavigationEvent
     data object AccountOverview : NavigationEvent
+    data object LicenseInformation : NavigationEvent
     data object PopBackStack : NavigationEvent
     data object NavigateUp : NavigationEvent
 }
@@ -42,4 +43,7 @@ sealed interface Routes : NavKey {
 
     @Serializable
     data object AccountOverview : Routes
+
+    @Serializable
+    data object LicenseInformation : Routes
 }

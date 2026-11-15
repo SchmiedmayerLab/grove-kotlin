@@ -44,6 +44,7 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | [`onboarding`](onboarding/) | Onboarding flow and its steps. |
 | [`consent`](consent/) | Consent documents and signature capture. |
 | [`contact`](contact/) | Contact information screens. |
+| [`license`](license/) | The app's third-party software and their licenses; the app applies the AboutLibraries Gradle plugin. |
 | [`questionnaire`](questionnaire/) | FHIR questionnaire rendering and responses. |
 | [`markdown`](markdown/) | Markdown parsing and rendering. |
 | [`health`](health/) | Health Connect access. |
