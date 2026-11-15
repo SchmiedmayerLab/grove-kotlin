@@ -32,7 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
@@ -47,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.grovealliance.consent.SignatureCanvasSize
 import org.grovealliance.consent.SignatureMetadata
 import org.grovealliance.consent.SignaturePoint
 import org.grovealliance.consent.SignatureStroke
@@ -71,7 +75,7 @@ internal data class ConsentSignatureSection(
     val metadata: Flow<SignatureMetadata>,
     val onFirstNameChanged: (String) -> Unit,
     val onLastNameChanged: (String) -> Unit,
-    val onSignatureStrokesChanged: (List<SignatureStroke>) -> Unit,
+    val onSignatureStrokesChanged: (List<SignatureStroke>, SignatureCanvasSize) -> Unit,
 ) : ComposableContent {
 
     @Composable
@@ -120,6 +124,11 @@ internal data class ConsentSignatureSection(
     ) {
         val strokeColor = Colors.onSurface
         val pendingPoints = remember { mutableStateListOf<SignaturePoint>() }
+        var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+        val reportedCanvasSize = SignatureCanvasSize(
+            width = canvasSize.width.toFloat(),
+            height = canvasSize.height.toFloat(),
+        )
 
         Box(
             modifier = modifier
@@ -131,7 +140,8 @@ internal data class ConsentSignatureSection(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(metadata.strokes) {
+                    .onSizeChanged { canvasSize = it }
+                    .pointerInput(metadata.strokes, reportedCanvasSize) {
                         detectDragGestures(
                             onDragStart = { offset ->
                                 pendingPoints.clear()
@@ -146,7 +156,7 @@ internal data class ConsentSignatureSection(
                                 if (pendingPoints.isNotEmpty()) {
                                     val stroke = SignatureStroke(pendingPoints.toList())
                                     pendingPoints.clear()
-                                    onSignatureStrokesChanged(metadata.strokes + stroke)
+                                    onSignatureStrokesChanged(metadata.strokes + stroke, reportedCanvasSize)
                                 }
                             },
                             onDragCancel = { pendingPoints.clear() },
@@ -221,7 +231,7 @@ internal data class ConsentSignatureSection(
                     image = ImageResource(Icons.AutoMirrored.Filled.Undo),
                     onClick = {
                         pendingPoints.clear()
-                        onSignatureStrokesChanged(metadata.strokes.dropLast(1))
+                        onSignatureStrokesChanged(metadata.strokes.dropLast(1), reportedCanvasSize)
                     },
                 )
             }
@@ -276,10 +286,17 @@ private fun ConsentSignatureContentFilledPreview() {
         ConsentSignatureSection(
             id = "sig",
             dateText = "01.01.2026",
-            metadata = flowOf(SignatureMetadata(givenName = "Leland", familyName = "Stanford", strokes = emptyList())),
+            metadata = flowOf(
+                SignatureMetadata(
+                    givenName = "Leland",
+                    familyName = "Stanford",
+                    strokes = emptyList(),
+                    canvasSize = null,
+                ),
+            ),
             onFirstNameChanged = {},
             onLastNameChanged = {},
-            onSignatureStrokesChanged = {},
+            onSignatureStrokesChanged = { _, _ -> },
         ).Content(modifier = Modifier.fillMaxWidth())
     }
 }
@@ -294,7 +311,7 @@ private fun ConsentSignatureContentEmptyPreview() {
             metadata = flowOf(SignatureMetadata.Empty),
             onFirstNameChanged = {},
             onLastNameChanged = {},
-            onSignatureStrokesChanged = {},
+            onSignatureStrokesChanged = { _, _ -> },
         ).Content(modifier = Modifier.fillMaxWidth())
     }
 }

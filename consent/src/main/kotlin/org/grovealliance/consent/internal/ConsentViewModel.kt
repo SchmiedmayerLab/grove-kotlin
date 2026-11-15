@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import org.grovealliance.consent.ConsentConfiguration
 import org.grovealliance.consent.ConsentFormState
 import org.grovealliance.consent.ConsentResponses
+import org.grovealliance.consent.SignatureCanvasSize
 import org.grovealliance.consent.SignatureMetadata
 import org.grovealliance.consent.SignatureStroke
 import org.grovealliance.core.logging.groveLogger
@@ -129,7 +130,11 @@ internal class ConsentViewModel(
 
             is ConsentAction.SignatureStrokesChanged -> updateResponses { response ->
                 val current = response.signatures[action.id] ?: initialMetadata
-                response.copy(signatures = response.signatures + (action.id to current.copy(strokes = action.strokes)))
+                val signature = current.copy(
+                    strokes = action.strokes,
+                    canvasSize = action.canvasSize,
+                )
+                response.copy(signatures = response.signatures + (action.id to signature))
             }
 
             is ConsentAction.OnConsentGivenCallbackUpdated -> consentCallback = action.callback
@@ -259,7 +264,11 @@ internal sealed interface ConsentAction {
     data class SelectionChanged(val id: String, val value: String) : ConsentAction
     data class FirstNameChanged(val id: String, val value: String) : ConsentAction
     data class LastNameChanged(val id: String, val value: String) : ConsentAction
-    data class SignatureStrokesChanged(val id: String, val strokes: List<SignatureStroke>) : ConsentAction
+    data class SignatureStrokesChanged(
+        val id: String,
+        val strokes: List<SignatureStroke>,
+        val canvasSize: SignatureCanvasSize,
+    ) : ConsentAction
 }
 
 /**

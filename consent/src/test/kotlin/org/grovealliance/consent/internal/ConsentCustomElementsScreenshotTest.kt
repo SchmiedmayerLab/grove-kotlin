@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import org.grovealliance.consent.SignatureCanvasSize
 import org.grovealliance.consent.SignatureMetadata
 import org.grovealliance.consent.SignaturePoint
 import org.grovealliance.consent.SignatureStroke
@@ -93,7 +94,7 @@ class ConsentCustomElementsScreenshotTest : ScreenshotTest() {
                 metadata = flowOf(signatureMetadata),
                 onFirstNameChanged = {},
                 onLastNameChanged = {},
-                onSignatureStrokesChanged = {},
+                onSignatureStrokesChanged = { _, _ -> },
             ).Content(modifier = Modifier.fillMaxWidth())
         }
     }
@@ -111,6 +112,10 @@ class ConsentCustomElementsScreenshotTest : ScreenshotTest() {
                     SignaturePoint(x = 226f, y = 82f),
                 )
             )
+        ),
+        canvasSize = SignatureCanvasSize(
+            width = 960f,
+            height = 420f,
         ),
     )
 }

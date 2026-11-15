@@ -7,59 +7,132 @@
 
 package org.grovealliance.ui.account
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.grovealliance.ui.AsyncTextButton
 import org.grovealliance.ui.ComposableContent
+import org.grovealliance.ui.GroveSection
 import org.grovealliance.ui.StringResource
+import org.grovealliance.ui.VerticalSpacer
+import org.grovealliance.ui.groveSection
+import org.grovealliance.ui.groveSections
 import org.grovealliance.ui.theme.Colors
 import org.grovealliance.ui.theme.GroveTheme
 import org.grovealliance.ui.theme.Spacings
 import org.grovealliance.ui.theme.ThemePreviews
 
 /**
- * Composable content rendering the overview screen
+ * Composable content rendering the overview screen as a single lazy list: the [header], the
+ * [sections], the [customSections] in their given order, and the [logout] button, with the same
+ * gap between each of them.
  *
  * @param title title of the screen
  * @param header header of the screen
  * @param sections list of sections to be rendered
- * @param customSection optional custom content to be rendered between the sections and the logout button
+ * @param customSections app-specific sections rendered between the sections and the logout button
  * @param logout button to logout
  */
 data class AccountOverviewLayout(
     val title: StringResource,
     val header: AccountProfileHeader,
-    val sections: List<AccountOverviewSection>,
-    val customSection: ComposableContent?,
+    val sections: List<GroveSection>,
+    val customSections: CustomAccountSections,
     val logout: AsyncTextButton,
 ) : ComposableContent {
     @Composable
     override fun Content(modifier: Modifier) {
-        Column(
-            modifier = modifier
-                .padding(Spacings.medium)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacings.large),
+        val sectionItems = (sections + customSections.sections).map { it.items() }
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(Spacings.medium),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            header.Content()
-
-            sections.forEach {
-                it.Content(modifier = Modifier.fillMaxWidth())
+            item(key = HEADER_KEY) { header.Content() }
+            sectionItems.forEachIndexed { index, items ->
+                GapBeforeFirstItem(
+                    scope = this,
+                    gap = { gap(key = "$SECTION_KEY-$index") },
+                ).items()
             }
-
-            customSection?.Content(modifier = Modifier.fillMaxWidth())
-
-            logout.Content(modifier = Modifier.fillMaxWidth())
+            gap(key = LOGOUT_KEY)
+            item(key = LOGOUT_KEY) { logout.Content(modifier = Modifier.fillMaxWidth()) }
         }
+    }
+
+    private fun LazyListScope.gap(key: String) {
+        item(key = "$GAP_KEY-$key") { VerticalSpacer(height = Spacings.large) }
+    }
+
+    /**
+     * Adds items to [scope], preceded by [gap] once the first of them is added, so content adding
+     * no items adds no gap either.
+     */
+    private class GapBeforeFirstItem(
+        private val scope: LazyListScope,
+        private val gap: LazyListScope.() -> Unit,
+    ) : LazyListScope by scope {
+        private var hasItems = false
+
+        override fun item(
+            key: Any?,
+            contentType: Any?,
+            content: @Composable LazyItemScope.() -> Unit,
+        ) {
+            addGapOnce()
+            scope.item(
+                key = key,
+                contentType = contentType,
+                content = content,
+            )
+        }
+
+        override fun items(
+            count: Int,
+            key: ((index: Int) -> Any)?,
+            contentType: (index: Int) -> Any?,
+            itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
+        ) {
+            if (count > 0) addGapOnce()
+            scope.items(
+                count = count,
+                key = key,
+                contentType = contentType,
+                itemContent = itemContent,
+            )
+        }
+
+        override fun stickyHeader(
+            key: Any?,
+            contentType: Any?,
+            content: @Composable LazyItemScope.(index: Int) -> Unit,
+        ) {
+            addGapOnce()
+            scope.stickyHeader(
+                key = key,
+                contentType = contentType,
+                content = content,
+            )
+        }
+
+        private fun addGapOnce() {
+            if (hasItems) return
+            hasItems = true
+            scope.gap()
+        }
+    }
+
+    private companion object {
+        const val HEADER_KEY = "account-overview-header"
+        const val SECTION_KEY = "account-overview-section"
+        const val LOGOUT_KEY = "account-overview-logout"
+        const val GAP_KEY = "account-overview-gap"
     }
 }
 
@@ -84,13 +157,13 @@ private fun Preview() {
         onClick = {},
     )
 
-    val section = AccountOverviewSection(
-        title = StringResource("NAME"),
-        items = listOf(
-            name,
-            genderIdentity,
-        ),
-    )
+    val section = groveSection(key = "name") {
+        title("Name")
+        card(key = "items") {
+            row(key = "0", content = name)
+            row(key = "1", content = genderIdentity)
+        }
+    }
     val layout = AccountOverviewLayout(
         title = StringResource("Account overview"),
         header = AccountProfileHeader(
@@ -98,10 +171,8 @@ private fun Preview() {
             name = "Leland Stanford",
             description = "lelandstanford@stanford.edu",
         ),
-        sections = listOf(
-            section,
-        ),
-        customSection = null,
+        sections = groveSections { section(section) },
+        customSections = CustomAccountSections.None,
         logout = AsyncTextButton(
             title = StringResource("Logout"),
             containerColor = { Colors.error },

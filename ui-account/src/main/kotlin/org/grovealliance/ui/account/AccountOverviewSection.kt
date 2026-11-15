@@ -7,54 +7,34 @@
 
 package org.grovealliance.ui.account
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import org.grovealliance.ui.ComposableContent
-import org.grovealliance.ui.GroveCard
+import org.grovealliance.ui.LazyListContentPreview
 import org.grovealliance.ui.StringResource
-import org.grovealliance.ui.VerticalSpacer
-import org.grovealliance.ui.account.internal.AccountSectionTitle
-import org.grovealliance.ui.theme.GroveTheme
+import org.grovealliance.ui.groveSection
 import org.grovealliance.ui.theme.Spacings
 import org.grovealliance.ui.theme.ThemePreviews
 
 /**
- * Data class representing a section in the account overview screen.
- *
- * @param title The title of the section.
- * @param items The list of items to be displayed in the section.
+ * A section of the account overview: the [items] in one card under an optional [title],
+ * identified by [key] within the overview.
  */
-data class AccountOverviewSection(
-    val title: StringResource?,
-    val items: List<AnyAccountOverviewItem>,
-) : ComposableContent {
-
-    @Composable
-    override fun Content(modifier: Modifier) {
-        Column(modifier = modifier) {
-            title?.let {
-                AccountSectionTitle(title = it)
-                VerticalSpacer(height = Spacings.extraSmall)
-            }
-            GroveCard {
-                items.forEachIndexed { index, item ->
-                    item.Content(modifier = Modifier.fillMaxWidth())
-                    if (index < items.size - 1) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacings.medium),
-                        )
-                    }
-                }
-            }
+@Suppress("FunctionName")
+fun AccountOverviewSection(
+    key: String,
+    title: StringResource?,
+    items: List<AnyAccountOverviewItem>,
+) = groveSection(key = key) {
+    title?.let { title(it) }
+    card(key = ITEMS_KEY) {
+        items.forEachIndexed { index, item ->
+            row(key = "$index", content = item)
         }
     }
 }
+
+private const val ITEMS_KEY = "items"
 
 @ThemePreviews
 @Composable
@@ -77,15 +57,14 @@ private fun Preview() {
         onClick = {},
     )
 
-    val section = AccountOverviewSection(
-        title = StringResource("NAME"),
-        items = listOf(
-            name,
-            genderIdentity,
-        ),
+    LazyListContentPreview(
+        content = groveSection(key = "name") {
+            title("Name")
+            card(key = "items") {
+                row(key = "0", content = name)
+                row(key = "1", content = genderIdentity)
+            }
+        },
+        modifier = Modifier.padding(Spacings.medium),
     )
-
-    GroveTheme {
-        section.Content(modifier = Modifier.fillMaxWidth())
-    }
 }

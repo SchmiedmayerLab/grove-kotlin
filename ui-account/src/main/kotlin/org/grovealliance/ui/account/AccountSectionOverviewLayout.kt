@@ -7,22 +7,21 @@
 
 package org.grovealliance.ui.account
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.grovealliance.ui.ComposableContent
+import org.grovealliance.ui.GroveSection
 import org.grovealliance.ui.ImageResource
 import org.grovealliance.ui.StringResource
+import org.grovealliance.ui.groveSection
 import org.grovealliance.ui.theme.GroveTheme
 import org.grovealliance.ui.theme.Sizes
 import org.grovealliance.ui.theme.Spacings
@@ -36,21 +35,30 @@ import org.grovealliance.ui.theme.ThemePreviews
  */
 data class AccountSectionOverviewLayout(
     val icon: ImageResource,
-    val section: AccountOverviewSection,
+    val section: GroveSection,
 ) : ComposableContent {
 
     @Composable
     override fun Content(modifier: Modifier) {
-        Column(
-            modifier = modifier
-                .padding(Spacings.medium)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacings.medium),
+        val sectionItems = section.items()
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(Spacings.medium),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            icon.Content(modifier = Modifier.size(Sizes.Icon.medium))
-            section.Content(modifier = Modifier.fillMaxWidth())
+            item(key = ICON_KEY) {
+                icon.Content(
+                    modifier = Modifier
+                        .padding(bottom = Spacings.medium)
+                        .size(Sizes.Icon.medium),
+                )
+            }
+            sectionItems()
         }
+    }
+
+    private companion object {
+        const val ICON_KEY = "account-section-overview-icon"
     }
 }
 
@@ -74,10 +82,12 @@ private fun Preview() {
         onClick = {},
     )
     val layout = AccountSectionOverviewLayout(
-        section = AccountOverviewSection(
-            title = null,
-            items = listOf(nameRow, emailRow),
-        ),
+        section = groveSection(key = "name") {
+            card(key = "items") {
+                row(key = "0", content = nameRow)
+                row(key = "1", content = emailRow)
+            }
+        },
         icon = ImageResource(Icons.Default.AccountCircle),
     )
     GroveTheme {

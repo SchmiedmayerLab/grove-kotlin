@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import org.grovealliance.testing.screenshot.ScreenshotTest
 import org.grovealliance.ui.ImageResource
 import org.grovealliance.ui.StringResource
+import org.grovealliance.ui.groveSection
 import org.junit.Test
 
 class AccountSectionOverviewLayoutScreenshotTest : ScreenshotTest() {
@@ -23,27 +24,32 @@ class AccountSectionOverviewLayoutScreenshotTest : ScreenshotTest() {
     fun `AccountSectionOverviewLayout name and email screenshot`() {
         val layout = AccountSectionOverviewLayout(
             icon = ImageResource(Icons.Default.AccountCircle),
-            section = AccountOverviewSection(
-                title = null,
-                items = listOf(
-                    AccountOverviewItem(
-                        title = StringResource("Full Name"),
-                        valueDisplay = StringDataDisplay(),
-                        value = "Leland Stanford",
-                        leadingImage = null,
-                        showArrow = true,
-                        onClick = {},
-                    ),
-                    AccountOverviewItem(
-                        title = StringResource("Email Address"),
-                        valueDisplay = StringDataDisplay(),
-                        value = "leland@stanford.edu",
-                        leadingImage = null,
-                        showArrow = true,
-                        onClick = {},
-                    ),
-                ),
-            ),
+            section = groveSection(key = "name") {
+                card(key = "items") {
+                    row(
+                        key = "0",
+                        content = AccountOverviewItem(
+                            title = StringResource("Full Name"),
+                            valueDisplay = StringDataDisplay(),
+                            value = "Leland Stanford",
+                            leadingImage = null,
+                            showArrow = true,
+                            onClick = {},
+                        ),
+                    )
+                    row(
+                        key = "1",
+                        content = AccountOverviewItem(
+                            title = StringResource("Email Address"),
+                            valueDisplay = StringDataDisplay(),
+                            value = "leland@stanford.edu",
+                            leadingImage = null,
+                            showArrow = true,
+                            onClick = {},
+                        ),
+                    )
+                }
+            },
         )
 
         screenshot {
@@ -55,19 +61,21 @@ class AccountSectionOverviewLayoutScreenshotTest : ScreenshotTest() {
     fun `AccountSectionOverviewLayout security screenshot`() {
         val layout = AccountSectionOverviewLayout(
             icon = ImageResource(Icons.Default.Lock),
-            section = AccountOverviewSection(
-                title = null,
-                items = listOf(
-                    AccountOverviewItem(
-                        title = StringResource("Change Password"),
-                        valueDisplay = StringDataDisplay(),
-                        value = "",
-                        leadingImage = null,
-                        showArrow = true,
-                        onClick = {},
-                    ),
-                ),
-            ),
+            section = groveSection(key = "security") {
+                card(key = "items") {
+                    row(
+                        key = "0",
+                        content = AccountOverviewItem(
+                            title = StringResource("Change Password"),
+                            valueDisplay = StringDataDisplay(),
+                            value = "",
+                            leadingImage = null,
+                            showArrow = true,
+                            onClick = {},
+                        ),
+                    )
+                }
+            },
         )
 
         screenshot {

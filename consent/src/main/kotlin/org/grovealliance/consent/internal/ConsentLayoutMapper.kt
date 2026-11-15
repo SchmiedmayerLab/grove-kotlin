@@ -149,6 +149,14 @@ internal class ConsentLayoutMapperImpl(
             ),
             onFirstNameChanged = { value -> input.actionSink.push(ConsentAction.FirstNameChanged(id, value)) },
             onLastNameChanged = { value -> input.actionSink.push(ConsentAction.LastNameChanged(id, value)) },
-            onSignatureStrokesChanged = { strokes -> input.actionSink.push(ConsentAction.SignatureStrokesChanged(id, strokes)) },
+            onSignatureStrokesChanged = { strokes, canvasSize ->
+                input.actionSink.push(
+                    ConsentAction.SignatureStrokesChanged(
+                        id = id,
+                        strokes = strokes,
+                        canvasSize = canvasSize,
+                    ),
+                )
+            },
         )
 }

@@ -29,6 +29,7 @@ import org.grovealliance.core.viewmodel.viewModel
  *             givenName = user.givenName,
  *             familyName = user.familyName,
  *             strokes = emptyList(),
+ *             canvasSize = null,
  *         )
  *     }
  * }

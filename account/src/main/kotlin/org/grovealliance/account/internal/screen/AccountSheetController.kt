@@ -33,11 +33,11 @@ import org.grovealliance.ui.MutableGroveScaffoldState
 import org.grovealliance.ui.StringResource
 import org.grovealliance.ui.account.AccountChangePasswordLayout
 import org.grovealliance.ui.account.AccountOverviewItem
-import org.grovealliance.ui.account.AccountOverviewSection
 import org.grovealliance.ui.account.AccountSectionOverviewLayout
 import org.grovealliance.ui.account.AnyAccountOverviewItem
 import org.grovealliance.ui.account.StringDataDisplay
 import org.grovealliance.ui.groveAppBar
+import org.grovealliance.ui.groveSection
 import org.grovealliance.ui.showErrorToast
 
 /**
@@ -85,10 +85,13 @@ internal class AccountSheetController(
 
         val layout = MutableStateFlow(
             AccountSectionOverviewLayout(
-                section = AccountOverviewSection(
-                    title = null,
-                    items = buildNameItems(scaffoldState, coroutinesLauncher),
-                ),
+                section = groveSection(key = NAME_SECTION_KEY) {
+                    card(key = "items") {
+                        buildNameItems(scaffoldState, coroutinesLauncher).forEachIndexed { index, item ->
+                            row(key = "$index", content = item)
+                        }
+                    }
+                },
                 icon = ImageResource(Icons.Default.AccountCircle),
             )
         )
@@ -160,10 +163,13 @@ internal class AccountSheetController(
 
         val layout = MutableStateFlow(
             AccountSectionOverviewLayout(
-                section = AccountOverviewSection(
-                    title = null,
-                    items = buildSecurityItems(scaffoldState, coroutinesLauncher)
-                ),
+                section = groveSection(key = SECURITY_SECTION_KEY) {
+                    card(key = "items") {
+                        buildSecurityItems(scaffoldState, coroutinesLauncher).forEachIndexed { index, item ->
+                            row(key = "$index", content = item)
+                        }
+                    }
+                },
                 icon = ImageResource(Icons.Default.Lock),
             )
         )
@@ -328,5 +334,10 @@ internal class AccountSheetController(
         val confirmError: StringResource? = null,
     ) {
         val canSave: Boolean get() = newPassword.isNotEmpty() && confirmPassword.isNotEmpty()
+    }
+
+    private companion object {
+        const val NAME_SECTION_KEY = "name"
+        const val SECURITY_SECTION_KEY = "security"
     }
 }

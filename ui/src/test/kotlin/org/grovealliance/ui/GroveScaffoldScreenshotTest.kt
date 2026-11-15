@@ -75,6 +75,28 @@ class GroveScaffoldScreenshotTest : ScreenshotTest() {
     }
 
     @Test
+    fun `GroveScaffold with dialog screenshot`() {
+        screenshot(
+            state = scaffoldState(
+                appBar = appBar(),
+                dialog = GroveAlertDialog(
+                    title = StringResource("Delete Entry?"),
+                    message = StringResource("The entry is removed from all of your devices."),
+                    confirmButton = GroveAlertDialog.Button(
+                        title = StringResource("Delete"),
+                        style = GroveAlertDialog.Button.Style.Destructive,
+                        action = {},
+                    ),
+                    dismissButton = GroveAlertDialog.Button(
+                        title = StringResource("Cancel"),
+                        action = {},
+                    ),
+                ),
+            )
+        )
+    }
+
+    @Test
     fun `GroveScaffold with loading overlay`() {
         screenshot(
             state = scaffoldState(
@@ -105,11 +127,13 @@ class GroveScaffoldScreenshotTest : ScreenshotTest() {
         appBar: GroveAppBar? = null,
         toast: GroveToast? = null,
         bottomSheet: BottomSheetComposableContent? = null,
+        dialog: DialogComposableContent? = null,
         overlay: ComposableContent? = null,
     ) = GroveScaffoldState(
         appBar = appBar,
         toast = toast,
         bottomSheet = bottomSheet,
+        dialog = dialog,
         overlay = overlay,
     )
 
