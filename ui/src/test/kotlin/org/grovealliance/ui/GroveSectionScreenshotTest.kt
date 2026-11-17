@@ -41,6 +41,28 @@ class GroveSectionScreenshotTest : ScreenshotTest() {
     }
 
     @Test
+    fun `GroveSection with subtitle`() {
+        // given
+        val section = base.copy(subtitle = StringResource("How we reach you."))
+
+        // when / then
+        screenshot(section = section)
+    }
+
+    @Test
+    fun `GroveSection with subtitle only`() {
+        // given
+        val section = base.copy(
+            title = null,
+            subtitle = StringResource("How we reach you."),
+            footer = null,
+        )
+
+        // when / then
+        screenshot(section = section)
+    }
+
+    @Test
     fun `GroveSection without title and footer`() {
         // given
         val section = base.copy(
