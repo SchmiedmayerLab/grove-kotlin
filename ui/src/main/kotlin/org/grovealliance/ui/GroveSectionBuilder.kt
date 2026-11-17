@@ -42,6 +42,7 @@ class GroveSectionsBuilderScope internal constructor() {
 @GroveSectionDsl
 class GroveSectionBuilderScope internal constructor(private val key: String) {
     private var title: StringResource? = null
+    private var subtitle: StringResource? = null
     private var footer: StringResource? = null
     private val elements = mutableListOf<GroveSection.Element>()
 
@@ -54,6 +55,17 @@ class GroveSectionBuilderScope internal constructor(private val key: String) {
     /** Sets the section heading. */
     fun title(stringResource: StringResource) {
         title = stringResource
+    }
+
+    /** Sets the text beneath the section heading. */
+    fun subtitle(string: String) = subtitle(StringResource(string))
+
+    /** Sets the text beneath the section heading. */
+    fun subtitle(@StringRes resId: Int) = subtitle(StringResource(resId))
+
+    /** Sets the text beneath the section heading. */
+    fun subtitle(stringResource: StringResource) {
+        subtitle = stringResource
     }
 
     /** Sets the text below the section's elements. */
@@ -92,7 +104,13 @@ class GroveSectionBuilderScope internal constructor(private val key: String) {
         this.elements.addAll(elements)
     }
 
-    internal fun build() = GroveSection(key = key, title = title, elements = elements.toList(), footer = footer)
+    internal fun build() = GroveSection(
+        key = key,
+        title = title,
+        subtitle = subtitle,
+        elements = elements.toList(),
+        footer = footer,
+    )
 }
 
 /** Builds the rows of one card, in display order. */

@@ -7,6 +7,8 @@
 
 package org.grovealliance.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -24,11 +26,12 @@ import org.grovealliance.ui.theme.Colors
 import org.grovealliance.ui.theme.Spacings
 import org.grovealliance.ui.theme.TextStyles
 import org.grovealliance.ui.theme.ThemePreviews
-import org.grovealliance.ui.theme.semiBold
+import org.grovealliance.ui.theme.medium
 
 /**
- * A section of a lazy list: an optional [title], the [elements] below it and an optional [footer]
- * below them, each added to the hosting list as items of their own so long sections stay lazy.
+ * A section of a lazy list: an optional [title] with an optional [subtitle] beneath it, the
+ * [elements] below them and an optional [footer] below those, each added to the hosting list as
+ * items of their own so long sections stay lazy.
  *
  * The section spaces its own parts, so the rows of an [Element.Card] stay joined as one card as
  * long as the hosting list does not space its items itself, as `Arrangement.spacedBy` would.
@@ -40,6 +43,7 @@ import org.grovealliance.ui.theme.semiBold
 data class GroveSection(
     val key: String,
     val title: StringResource? = null,
+    val subtitle: StringResource? = null,
     val elements: List<Element>,
     val footer: StringResource? = null,
 ) : LazyListContent {
@@ -48,12 +52,17 @@ data class GroveSection(
      * Whether the section adds no items to a list.
      */
     val isEmpty: Boolean
-        get() = title == null && footer == null && elements.all { it is Element.Card && it.rows.isEmpty() }
+        get() = title == null && subtitle == null && footer == null && elements.all { it is Element.Card && it.rows.isEmpty() }
 
     @Composable
     override fun items(): LazyListScope.() -> Unit = {
-        title?.let { title ->
-            item(key = "$key-title") { SectionTitle(title = title) }
+        if (title != null || subtitle != null) {
+            item(key = "$key-title") {
+                SectionHeader(
+                    title = title,
+                    subtitle = subtitle,
+                )
+            }
         }
         elements.forEachIndexed { index, element ->
             when (element) {
@@ -107,20 +116,36 @@ data class GroveSection(
 }
 
 @Composable
-private fun SectionTitle(title: StringResource) {
-    Text(
+private fun SectionHeader(
+    title: StringResource?,
+    subtitle: StringResource?,
+) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
                 start = Spacings.medium,
                 end = Spacings.medium,
                 bottom = Spacings.small,
+            ),
+        verticalArrangement = Arrangement.spacedBy(Spacings.tiny),
+    ) {
+        title?.let {
+            Text(
+                modifier = Modifier.semantics { heading() },
+                text = it.text(),
+                style = TextStyles.titleSmall.medium(),
+                color = Colors.onSurfaceVariant,
             )
-            .semantics { heading() },
-        text = title.text(),
-        style = TextStyles.titleSmall.semiBold(),
-        color = Colors.onSurfaceVariant,
-    )
+        }
+        subtitle?.let {
+            Text(
+                text = it.text(),
+                style = TextStyles.bodySmall,
+                color = Colors.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Composable
@@ -142,6 +167,7 @@ private fun SectionFooter(footer: StringResource) {
 private class GroveSectionPreviewProvider : PreviewParameterProvider<GroveSection> {
     private val base = groveSection(key = "preview") {
         title("Personal Details")
+        subtitle("How we reach you.")
         card(key = "details") {
             listOf("Name", "Email").forEach { label ->
                 row(
@@ -159,7 +185,7 @@ private class GroveSectionPreviewProvider : PreviewParameterProvider<GroveSectio
     }
     override val values = sequenceOf(
         base,
-        base.copy(title = null, footer = null),
+        base.copy(title = null, subtitle = null, footer = null),
     )
 }
 

@@ -67,6 +67,7 @@ class GroveSectionBuilderTest {
         val section = groveSection(key = "app") {
             title("Replaced title")
             title(Strings.account)
+            subtitle("Subtitle")
             footer(Strings.viewstate_default_error_message)
             footer(StringResource("Replaced footer"))
             card(key = "details", shape = shape, showDividers = false) {
@@ -76,6 +77,7 @@ class GroveSectionBuilderTest {
 
         // then
         assertThat(section.title).isEqualTo(StringResource(Strings.account))
+        assertThat(section.subtitle).isEqualTo(StringResource("Subtitle"))
         assertThat(section.footer).isEqualTo(StringResource("Replaced footer"))
         val card = section.elements.single() as GroveSection.Element.Card
         assertThat(card.shape).isSameInstanceAs(shape)
