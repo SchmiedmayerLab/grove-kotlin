@@ -73,4 +73,29 @@ class StringResourceTest {
         // then
         assertThat(resource.get(context)).isEqualTo("ab")
     }
+
+    @Test
+    fun `resolves a resource implemented outside the module`() {
+        // when
+        val resource = RepeatedStringResource(text = StringResource("ab"))
+
+        // then
+        assertThat(resource.get(context)).isEqualTo("abab")
+    }
+
+    @Test
+    fun `composes a resource implemented outside the module`() {
+        // when
+        val resource = StringResource("x") + RepeatedStringResource(text = StringResource("ab"))
+
+        // then
+        assertThat(resource.get(context)).isEqualTo("xabab")
+    }
+
+    /**
+     * A [StringResource] implemented in the test, resolving to [text] twice.
+     */
+    private data class RepeatedStringResource(private val text: StringResource) : StringResource {
+        override fun get(context: Context): String = text.get(context).repeat(2)
+    }
 }
