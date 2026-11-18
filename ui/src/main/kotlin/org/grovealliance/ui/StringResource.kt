@@ -17,7 +17,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 
-sealed interface StringResource {
+/**
+ * Text resolved against a [Context] when it is shown.
+ *
+ * Build one from a string resource, a plural or a literal through the companion's factories; an
+ * app can implement it for text resolved by rules of its own.
+ */
+interface StringResource {
 
     operator fun plus(other: StringResource): StringResource = CompositeStringResource(this, other)
 
