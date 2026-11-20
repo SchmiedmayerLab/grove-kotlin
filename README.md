@@ -48,6 +48,7 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | [`questionnaire`](questionnaire/) | FHIR questionnaire rendering and responses. |
 | [`markdown`](markdown/) | Markdown parsing and rendering. |
 | [`health`](health/) | Health Connect access. |
+| [`health-bulk-export`](health-bulk-export/) | Resumable export of historical Health Connect records in batches. |
 | [`scheduler`](scheduler/) | Task schedules, occurrences, and notifications. |
 | [`study`](study/) | Study enrollment and lifecycle. |
 | [`study-definition`](study-definition/) | Study bundles and the study definition model. |

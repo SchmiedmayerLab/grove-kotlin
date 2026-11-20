@@ -45,7 +45,7 @@ import org.grovealliance.ui.account.AccountEditButton
 import org.grovealliance.ui.account.AccountOverviewItem
 import org.grovealliance.ui.account.AccountOverviewLayout
 import org.grovealliance.ui.account.AccountProfileHeader
-import org.grovealliance.ui.account.CustomAccountSections
+import org.grovealliance.ui.account.CustomAccountContent
 import org.grovealliance.ui.account.StringDataDisplay
 import org.grovealliance.ui.coroutinesLauncher
 import org.grovealliance.ui.groveAppBar
@@ -73,7 +73,7 @@ internal class AccountOverviewViewModel(
     private val _isEditMode = MutableStateFlow(false)
     private val _showEditButton = MutableStateFlow(false)
     private val configuredKeys by lazy { account.configuration.all() }
-    private val customSections = MutableStateFlow(CustomAccountSections.None)
+    private val customContent = MutableStateFlow(CustomAccountContent.None)
 
     private val editButton = AccountEditButton(
         visible = combine(_isEditMode, _showEditButton) { isEdit, showEdit -> isEdit || showEdit },
@@ -104,7 +104,7 @@ internal class AccountOverviewViewModel(
             merge(
                 account.details,
                 _isEditMode,
-                customSections,
+                customContent,
             ).collect {
                 val details = account.details.value
                 if (details == null) {
@@ -132,7 +132,7 @@ internal class AccountOverviewViewModel(
 
     private fun onAction(action: AccountOverviewAction) {
         when (action) {
-            is AccountOverviewAction.SetCustomSections -> customSections.update { action.sections }
+            is AccountOverviewAction.SetCustomContent -> customContent.update { action.content }
         }
     }
 
@@ -140,7 +140,7 @@ internal class AccountOverviewViewModel(
         title = StringResource(Strings.account_overview_section_title),
         header = buildHeader(details),
         sections = buildSections(details),
-        customSections = customSections.value,
+        customContent = customContent.value,
         logout = AsyncTextButton(
             title = StringResource(Strings.account_overview_logout_button),
             containerColor = { Colors.error },
@@ -350,5 +350,5 @@ internal sealed interface AccountOverviewEvent {
 }
 
 internal sealed interface AccountOverviewAction {
-    data class SetCustomSections(val sections: CustomAccountSections) : AccountOverviewAction
+    data class SetCustomContent(val content: CustomAccountContent) : AccountOverviewAction
 }

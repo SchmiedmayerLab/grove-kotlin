@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.grovealliance.testing.screenshot.ScreenshotTest
@@ -45,8 +46,33 @@ class AccountOverviewLayoutScreenshotTest : ScreenshotTest() {
         screenshotLayout(leadingCustomSections = listOf(empty))
     }
 
+    @Test
+    fun `AccountOverviewLayout with a footer screenshot`() {
+        // given
+        val footer = object : LazyListContent {
+            @Composable
+            override fun items(): LazyListScope.() -> Unit = {
+                item(key = "footer") {
+                    Text(
+                        text = "Footer",
+                        color = Colors.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        // when / then
+        screenshotLayout(
+            leadingCustomSections = emptyList(),
+            footer = footer,
+        )
+    }
+
     @Suppress("LongMethod")
-    private fun screenshotLayout(leadingCustomSections: List<LazyListContent>) {
+    private fun screenshotLayout(
+        leadingCustomSections: List<LazyListContent>,
+        footer: LazyListContent? = null,
+    ) {
         val initialSection = groveSection(key = "account") {
             card(key = "items") {
                 row(
@@ -132,8 +158,9 @@ class AccountOverviewLayoutScreenshotTest : ScreenshotTest() {
                 section(initialSection)
                 section(personalDetailsSection)
             },
-            customSections = CustomAccountSections(
+            customContent = CustomAccountContent(
                 sections = leadingCustomSections + licenses,
+                footer = footer,
             ),
             logout = AsyncTextButton(
                 title = StringResource("Logout"),
