@@ -30,25 +30,27 @@ import org.grovealliance.ui.theme.ThemePreviews
 
 /**
  * Composable content rendering the overview screen as a single lazy list: the [header], the
- * [sections], the [customSections] in their given order, and the [logout] button, with the same
- * gap between each of them.
+ * [sections], the custom sections of [customContent] in their given order, the [logout] button and
+ * the custom footer, with the same gap between each of them.
  *
  * @param title title of the screen
  * @param header header of the screen
  * @param sections list of sections to be rendered
- * @param customSections app-specific sections rendered between the sections and the logout button
+ * @param customContent app-specific sections rendered between the sections and the logout button,
+ * and an app-specific footer rendered after the logout button
  * @param logout button to logout
  */
 data class AccountOverviewLayout(
     val title: StringResource,
     val header: AccountProfileHeader,
     val sections: List<GroveSection>,
-    val customSections: CustomAccountSections,
+    val customContent: CustomAccountContent,
     val logout: AsyncTextButton,
 ) : ComposableContent {
     @Composable
     override fun Content(modifier: Modifier) {
-        val sectionItems = (sections + customSections.sections).map { it.items() }
+        val sectionItems = (sections + customContent.sections).map { it.items() }
+        val footerItems = customContent.footer?.items()
         LazyColumn(
             modifier = modifier,
             contentPadding = PaddingValues(Spacings.medium),
@@ -63,6 +65,12 @@ data class AccountOverviewLayout(
             }
             gap(key = LOGOUT_KEY)
             item(key = LOGOUT_KEY) { logout.Content(modifier = Modifier.fillMaxWidth()) }
+            footerItems?.let { items ->
+                GapBeforeFirstItem(
+                    scope = this,
+                    gap = { gap(key = FOOTER_KEY) },
+                ).items()
+            }
         }
     }
 
@@ -132,6 +140,7 @@ data class AccountOverviewLayout(
         const val HEADER_KEY = "account-overview-header"
         const val SECTION_KEY = "account-overview-section"
         const val LOGOUT_KEY = "account-overview-logout"
+        const val FOOTER_KEY = "account-overview-footer"
         const val GAP_KEY = "account-overview-gap"
     }
 }
@@ -172,7 +181,7 @@ private fun Preview() {
             description = "lelandstanford@stanford.edu",
         ),
         sections = groveSections { section(section) },
-        customSections = CustomAccountSections.None,
+        customContent = CustomAccountContent.None,
         logout = AsyncTextButton(
             title = StringResource("Logout"),
             containerColor = { Colors.error },

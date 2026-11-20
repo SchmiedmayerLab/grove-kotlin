@@ -19,7 +19,7 @@ import org.grovealliance.account.internal.screen.AccountOverviewViewModel
 import org.grovealliance.core.viewmodel.groveViewModel
 import org.grovealliance.ui.ConsumeEvents
 import org.grovealliance.ui.GroveScaffold
-import org.grovealliance.ui.account.CustomAccountSections
+import org.grovealliance.ui.account.CustomAccountContent
 
 /**
  * Renders the account overview screen for the currently signed-in user.
@@ -30,13 +30,13 @@ import org.grovealliance.ui.account.CustomAccountSections
  * )
  * ```
  *
- * @param customSections App-specific sections rendered after the account's own sections, in their
- * given order.
+ * @param customContent App-specific sections rendered after the account's own sections, in their
+ * given order, and an app-specific footer rendered after the logout button.
  * @param onDismiss Called when the user dismisses the screen.
  */
 @Composable
 fun AccountOverviewScreen(
-    customSections: CustomAccountSections = CustomAccountSections.None,
+    customContent: CustomAccountContent = CustomAccountContent.None,
     onDismiss: () -> Unit,
 ) {
     val viewModel = groveViewModel<AccountOverviewViewModel>()
@@ -48,8 +48,8 @@ fun AccountOverviewScreen(
         }
     }
 
-    LaunchedEffect(customSections) {
-        screen.actionSink.push(action = AccountOverviewAction.SetCustomSections(sections = customSections))
+    LaunchedEffect(customContent) {
+        screen.actionSink.push(action = AccountOverviewAction.SetCustomContent(content = customContent))
     }
 
     GroveScaffold(state = screen.scaffoldState) {
