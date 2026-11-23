@@ -73,3 +73,7 @@ build/
 
 # Other files
 .DS_Store
+
+# grove-fhir checkouts the FHIR conformance lane uses
+.fhir/
+.grove-fhir/

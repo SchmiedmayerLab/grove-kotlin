@@ -47,8 +47,10 @@ Grove is an ecosystem of modules. An application picks the ones it needs — acc
 | [`license`](license/) | The app's third-party software and their licenses; the app applies the AboutLibraries Gradle plugin. |
 | [`questionnaire`](questionnaire/) | FHIR questionnaire rendering and responses. |
 | [`markdown`](markdown/) | Markdown parsing and rendering. |
+| [`fhir-contract`](fhir-contract/) | Identities, canonical JSON, and assembly and validation of the Grove Mobile FHIR exchange. |
 | [`health`](health/) | Health Connect access. |
 | [`health-bulk-export`](health-bulk-export/) | Resumable export of historical Health Connect records in batches. |
+| [`health-fhir`](health-fhir/) | Conversion of Health Connect records into Grove Mobile FHIR exchange records. |
 | [`scheduler`](scheduler/) | Task schedules, occurrences, and notifications. |
 | [`study`](study/) | Study enrollment and lifecycle. |
 | [`study-definition`](study-definition/) | Study bundles and the study definition model. |
