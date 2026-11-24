@@ -11,7 +11,7 @@
 package org.grovealliance.fhir.contract
 
 /**
- * The canonical URLs of every profile in the grove-fhir package graph, version 0.8.0,
+ * The canonical URLs of every profile in the grove-fhir package graph, version 0.8.3,
  * grouped by the guide that publishes them.
  */
 object Profile {

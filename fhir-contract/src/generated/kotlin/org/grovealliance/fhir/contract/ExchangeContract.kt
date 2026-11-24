@@ -11,7 +11,7 @@
 package org.grovealliance.fhir.contract
 
 /**
- * The constants of the Grove Mobile exchange protocol, version 0.8.0.
+ * The constants of the Grove Mobile exchange protocol, version 0.8.3.
  */
 @InternalGroveFhirApi
 object ExchangeContract {
@@ -19,7 +19,7 @@ object ExchangeContract {
     /**
      * The version of the exchange protocol.
      */
-    const val VERSION = "0.8.0"
+    const val VERSION = "0.8.3"
 
     /**
      * The UUID namespace of every entry `fullUrl`.

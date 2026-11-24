@@ -48,6 +48,7 @@ object ExtensionUrl {
      * Defined by the `org.grovealliance.fhir.healthkit` package.
      */
     object Healthkit {
+        const val METADATA = "https://grovealliance.org/fhir/healthkit/StructureDefinition/metadata"
         const val HEALTHKIT_ECG_SYMPTOMS_STATUS = "https://grovealliance.org/fhir/healthkit/StructureDefinition/healthkit-ecg-symptoms-status"
         const val HEALTHKIT_ECG_SOURCE_PERIOD = "https://grovealliance.org/fhir/healthkit/StructureDefinition/healthkit-ecg-source-period"
         const val HEALTHKIT_VISION_PRESCRIPTION_EXPIRATION = "https://grovealliance.org/fhir/healthkit/StructureDefinition/healthkit-vision-prescription-expiration"

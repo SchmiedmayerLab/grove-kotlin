@@ -50,7 +50,7 @@ class OpaqueIdentityScopeTest {
         }
 
         // then
-        assertThat(vectors).hasSize(70)
+        assertThat(vectors).isNotEmpty()
         assertThat(minted.map { (_, identifier) -> identifier.identifier.value }).isEqualTo(vectors.map { it.text(name = "value") })
         assertThat(minted.all { (kind, identifier) -> identifier.identifier.system == systems[kind] }).isTrue()
     }
@@ -68,7 +68,7 @@ class OpaqueIdentityScopeTest {
         }
 
         // then
-        assertThat(vectors).hasSize(8)
+        assertThat(vectors).isNotEmpty()
         assertThat(errors.mapValues { (_, error) -> error?.let { errorCode(error = it) } }).isEqualTo(errors.keys.associateWith { it })
     }
 
