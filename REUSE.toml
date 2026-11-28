@@ -39,8 +39,20 @@ SPDX-License-Identifier = "MIT"
 # Module READMEs carry no license header, so they are covered here.
 [[annotations]]
 path = [
+    "fhir-contract/README.md",
     "health-bulk-export/README.md",
+    "health-fhir/README.md",
     "license/README.md",
 ]
 SPDX-FileCopyrightText = "2026 Stanford University and the project authors (see CONTRIBUTORS.md)"
+SPDX-License-Identifier = "MIT"
+
+# Verbatim copies of grove-fhir's exchange protocol catalog and conformance corpora, which the tests run.
+[[annotations]]
+path = [
+    "fhir-contract/src/test/resources/grove-fhir/exchange-protocol.json",
+    "fhir-contract/src/test/resources/grove-fhir/corpora/**",
+    "health-fhir/src/test/resources/grove-fhir/corpora/**",
+]
+SPDX-FileCopyrightText = "2026 Schmiedmayer Lab and the project authors (see https://github.com/SchmiedmayerLab/grove-fhir)"
 SPDX-License-Identifier = "MIT"

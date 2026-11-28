@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 0,
+  "fhirVersion": "4.0.1",
+  "producer": {
+    "name": "Grove FHIR normative Mobile exchange corpus",
+    "version": "0.8.3"
+  },
+  "packages": [
+    {
+      "alias": "mobile",
+      "packageId": "org.grovealliance.fhir.mobile",
+      "version": "0.8.3"
+    },
+    {
+      "alias": "questionnaire",
+      "packageId": "org.grovealliance.fhir.questionnaire",
+      "version": "0.8.3"
+    }
+  ],
+  "resources": [
+    {
+      "path": "exchange-bundle.json",
+      "requiredProfiles": [
+        "https://grovealliance.org/fhir/mobile/StructureDefinition/grove-mobile-exchange-bundle"
+      ]
+    },
+    {
+      "path": "retraction-bundle.json",
+      "requiredProfiles": [
+        "https://grovealliance.org/fhir/mobile/StructureDefinition/grove-mobile-retraction-bundle"
+      ]
+    },
+    {
+      "path": "source-record-target-retraction-bundle.json",
+      "requiredProfiles": [
+        "https://grovealliance.org/fhir/mobile/StructureDefinition/grove-mobile-retraction-bundle"
+      ]
+    }
+  ],
+  "semanticVectors": [
+    {
+      "id": "heart-rate",
+      "path": "exchange-bundle.json",
+      "resourcePointer": "/entry/2/resource"
+    }
+  ]
+}

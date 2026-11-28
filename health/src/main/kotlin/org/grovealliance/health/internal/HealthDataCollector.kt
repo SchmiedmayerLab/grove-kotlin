@@ -54,8 +54,13 @@ internal class HealthDataCollector(
         collectionJob = scope.launch {
             when (val mode = deliverySetting.collectionMode) {
                 is CollectionMode.Manual -> {
-                    val result = getChangesOrResync()
-                    processResult(result)
+                    runCatching {
+                        val result = getChangesOrResync()
+                        processResult(result)
+                        tokenStore.storeToken(recordType, result.nextChangesToken)
+                    }.onFailure {
+                        logger.e(it) { "Error collecting Health data for $recordType" }
+                    }
                 }
 
                 is CollectionMode.Automatic -> {
@@ -85,7 +90,6 @@ internal class HealthDataCollector(
         return if (response.changesTokenExpired) {
             handleTokenExpired()
         } else {
-            tokenStore.storeToken(recordType, response.nextChangesToken)
             response
         }
     }
@@ -104,6 +108,7 @@ internal class HealthDataCollector(
             runCatching {
                 val result = getChangesOrResync()
                 processResult(result)
+                tokenStore.storeToken(recordType, result.nextChangesToken)
                 if (!result.hasMore) delay(interval)
             }.onFailure {
                 logger.e(it) { "Error collecting Health data for $recordType" }

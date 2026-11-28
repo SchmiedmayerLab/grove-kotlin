@@ -1,0 +1,126 @@
+#
+# This source file is part of the Grove open-source project
+#
+# SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
+#
+# SPDX-License-Identifier: MIT
+#
+
+name: Grove FHIR Contract
+
+# On pull requests: the FHIR modules match the grove-fhir release pinned in gradle.properties and pass
+# their tests against it. Weekly: the same tests against grove-fhir's latest release, as an early
+# warning that the next pin move needs work; that run changes nothing.
+on:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      grove_fhir_ref:
+        description: grove-fhir tag or commit to test against instead of the pin
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: FHIR Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Choose the grove-fhir Revision
+        id: revision
+        env:
+          REQUESTED_REF: ${{ inputs.grove_fhir_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          PINNED_COMMIT="$(grep '^groveFhir.commit=' gradle.properties | cut -d= -f2)"
+          if [ -n "$REQUESTED_REF" ]; then
+            echo "ref=$REQUESTED_REF" >> "$GITHUB_OUTPUT"
+            echo "pinned=false" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            LATEST="$(git ls-remote --tags --refs https://github.com/SchmiedmayerLab/grove-fhir.git \
+              | sed 's#.*refs/tags/##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+            echo "ref=$LATEST" >> "$GITHUB_OUTPUT"
+            echo "pinned=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$PINNED_COMMIT" >> "$GITHUB_OUTPUT"
+            echo "pinned=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checkout grove-fhir
+        uses: actions/checkout@v7
+        with:
+          repository: SchmiedmayerLab/grove-fhir
+          ref: ${{ steps.revision.outputs.ref }}
+          path: .grove-fhir
+          persist-credentials: false
+      - name: Record the grove-fhir Revision
+        env:
+          GROVE_FHIR_REF: ${{ steps.revision.outputs.ref }}
+        run: |
+          echo "grove-fhir ref: $GROVE_FHIR_REF"
+          echo "grove-fhir SHA: $(git -C .grove-fhir rev-parse HEAD)"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Check the Synchronized Contract
+        if: steps.revision.outputs.pinned == 'true'
+        run: python3 Scripts/sync-grove-fhir.py --grove-fhir .grove-fhir --check
+      - name: Synchronize With the Requested Revision
+        if: steps.revision.outputs.pinned != 'true'
+        run: python3 Scripts/sync-grove-fhir.py --grove-fhir .grove-fhir --allow-unpinned
+      - name: Test the FHIR Modules
+        run: ./gradlew :fhir-contract:test :health-fhir:testDebugUnitTest --console=plain
+
+  validator:
+    name: FHIR Validator
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Read the grove-fhir Pin
+        id: pin
+        run: echo "commit=$(grep '^groveFhir.commit=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - name: Checkout grove-fhir
+        uses: actions/checkout@v7
+        with:
+          repository: SchmiedmayerLab/grove-fhir
+          ref: ${{ steps.pin.outputs.commit }}
+          path: .grove-fhir
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Validate the Health Connect Resources
+        env:
+          GROVE_FHIR_GUIDES: ${{ github.workspace }}/.grove-fhir
+        run: ./Scripts/validate-fhir-conformance.sh
